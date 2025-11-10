@@ -31,13 +31,13 @@ export type GeneratePersonalizedQuizInput = z.infer<
 
 const QuestionSchema = z.object({
   question: z.string().describe('The text of the question.'),
-  type: z.enum(['multiple-choice', 'short-answer']).describe('The type of question.'),
+  type: z.literal('multiple-choice').describe("The type of question, which must be 'multiple-choice'."),
   options: z
     .array(z.string())
-    .describe('An array of 4 possible answers for multiple-choice questions. Empty for short-answer.'),
+    .describe('An array of 4 possible answers for multiple-choice questions.'),
   correctAnswer: z
     .string()
-    .describe('The correct answer. For short-answer, this is the ideal answer.'),
+    .describe('The correct answer from the provided options.'),
 });
 
 const GeneratePersonalizedQuizOutputSchema = z.object({
@@ -64,7 +64,7 @@ const generateQuizPrompt = ai.definePrompt({
 
   Your task is to generate a quiz based on the provided learning content, topic, and difficulty level. The quiz must have exactly {{{numberOfQuestions}}} questions.
   
-  Generate a mix of 'multiple-choice' and 'short-answer' questions. Each multiple-choice question must have exactly 4 options, and one of them must be the correct answer. For short-answer questions, provide an ideal, concise correct answer.
+  All questions MUST be of type 'multiple-choice'. Each question must have exactly 4 options, and one of them must be the correct answer.
 
   The difficulty should align with Bloom's Taxonomy:
   - 'easy': Focus on Remembering and Understanding (e.g., definitions, facts, explaining concepts).

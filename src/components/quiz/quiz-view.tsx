@@ -25,7 +25,7 @@ import { Slider } from '../ui/slider';
 
 type Question = {
   question: string;
-  type: 'multiple-choice' | 'short-answer';
+  type: 'multiple-choice';
   options: string[];
   correctAnswer: string;
 };
@@ -140,12 +140,10 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
   const handleSubmit = async () => {
     let newScore = 0;
     quizData.questions.forEach((q, index) => {
-        const userAnswer = answers[index]?.answer;
-        if (q.type === 'multiple-choice' && userAnswer === q.correctAnswer) {
-            newScore++;
-        } else if (q.type === 'short-answer' && userAnswer?.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()) {
-            newScore++;
-        }
+      const userAnswer = answers[index]?.answer;
+      if (userAnswer === q.correctAnswer) {
+        newScore++;
+      }
     });
     const finalScore = newScore;
     setScore(finalScore);
@@ -304,37 +302,24 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
           </div>
         </CardHeader>
         <CardContent>
-          {currentQuestion.type === 'multiple-choice' ? (
-            <RadioGroup value={answers[currentQuestionIndex]?.answer} onValueChange={handleAnswerChange} className="space-y-3">
-              {currentQuestion.options.map((option, index) => (
-                <Label 
-                  htmlFor={`q${currentQuestionIndex}-o${index}`} 
-                  key={index} 
-                  className={cn(
-                    "flex items-center space-x-4 p-4 rounded-lg border-2 transition-all cursor-pointer",
-                    "hover:border-primary/60 hover:bg-primary/5",
-                    answers[currentQuestionIndex]?.answer === option 
-                      ? "border-primary bg-primary/10" 
-                      : "border-border"
-                  )}
-                >
-                  <RadioGroupItem value={option} id={`q${currentQuestionIndex}-o${index}`} className="h-5 w-5"/>
-                  <span className="text-base flex-1">{option}</span>
-                </Label>
-              ))}
-            </RadioGroup>
-          ) : (
-            <div className="space-y-2">
-              <Label htmlFor={`q${currentQuestionIndex}-short`}>Your Answer</Label>
-              <Textarea
-                id={`q${currentQuestionIndex}-short`}
-                value={answers[currentQuestionIndex]?.answer || ''}
-                onChange={(e) => handleAnswerChange(e.target.value)}
-                placeholder="Type your answer here..."
-                className="min-h-[100px]"
-              />
-            </div>
-          )}
+          <RadioGroup value={answers[currentQuestionIndex]?.answer} onValueChange={handleAnswerChange} className="space-y-3">
+            {currentQuestion.options.map((option, index) => (
+              <Label 
+                htmlFor={`q${currentQuestionIndex}-o${index}`} 
+                key={index} 
+                className={cn(
+                  "flex items-center space-x-4 p-4 rounded-lg border-2 transition-all cursor-pointer",
+                  "hover:border-primary/60 hover:bg-primary/5",
+                  answers[currentQuestionIndex]?.answer === option 
+                    ? "border-primary bg-primary/10" 
+                    : "border-border"
+                )}
+              >
+                <RadioGroupItem value={option} id={`q${currentQuestionIndex}-o${index}`} className="h-5 w-5"/>
+                <span className="text-base flex-1">{option}</span>
+              </Label>
+            ))}
+          </RadioGroup>
 
           <div className="mt-6 pt-6 border-t">
               <Label htmlFor="confidence" className='flex items-center justify-between mb-3'>
