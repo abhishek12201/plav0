@@ -1,6 +1,7 @@
 
 "use client";
 import React, { useState, useTransition, useCallback, useEffect } from 'react';
+import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -28,6 +29,7 @@ type Question = {
   type: 'multiple-choice';
   options: string[];
   correctAnswer: string;
+  imageUrl?: string;
 };
 
 export type QuizData = {
@@ -71,6 +73,10 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
   const getFeedback = useCallback((currentScore: number, currentAnswers: Answers, tone: FeedbackTone, attemptDocId: string) => {
     setFeedback(null);
     startTransition(async () => {
+      if (!user) {
+        // This case should ideally not be hit if we are saving attempts, but as a safeguard.
+        return;
+      }
       const questionsWithUserAnswers = quizData.questions.map((q, i) => ({
         ...q,
         userAnswer: currentAnswers[i]?.answer || "Not answered",
@@ -86,18 +92,15 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
 
       if (feedbackResult && 'overallFeedback' in feedbackResult) {
         setFeedback(feedbackResult);
-        // Now save the feedback to the attempt on the client
-        if (user && attemptDocId) {
-          try {
-            const attemptRef = doc(firestore, "users", user.uid, "quizAttempts", attemptDocId);
-            await setDoc(attemptRef, { feedback: feedbackResult }, { merge: true });
-          } catch(error: any) {
-             toast({
-              title: "Feedback Save Error",
-              description: error.message || "Could not save AI feedback.",
-              variant: "destructive",
-            });
-          }
+        try {
+          const attemptRef = doc(firestore, "users", user.uid, "quizAttempts", attemptDocId);
+          await setDoc(attemptRef, { feedback: feedbackResult }, { merge: true });
+        } catch(error: any) {
+           toast({
+            title: "Feedback Save Error",
+            description: error.message || "Could not save AI feedback.",
+            variant: "destructive",
+          });
         }
       } else {
         const error = (feedbackResult as { error: string })?.error || "Could not generate adaptive feedback.";
@@ -155,6 +158,15 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
   };
 
   const handleSubmit = async () => {
+    if (!user || !firestore) {
+      toast({
+          title: "Error",
+          description: "Cannot save result: User not logged in.",
+          variant: "destructive",
+      });
+      return;
+    }
+    
     let newScore = 0;
     quizData.questions.forEach((q, index) => {
       const userAnswer = answers[index]?.answer;
@@ -165,15 +177,6 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
     const finalScore = newScore;
     setScore(finalScore);
     setIsFinished(true);
-
-    if (!user || !quizData.topic || !firestore) {
-      toast({
-          title: "Error",
-          description: "Cannot save result: User not logged in or missing data.",
-          variant: "destructive",
-      });
-      return;
-    }
 
     try {
       const attemptsCol = collection(firestore, "users", user.uid, "quizAttempts");
@@ -316,6 +319,18 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
       <Progress value={progress} className="mb-8 h-2" />
       
       <Card className="bg-card/50 border-none shadow-none">
+         {currentQuestion.imageUrl && (
+            <div className="relative aspect-video rounded-t-lg overflow-hidden mb-4">
+                <Image
+                    src={currentQuestion.imageUrl}
+                    alt="Question visual aid"
+                    fill
+                    className="object-cover"
+                    data-ai-hint="educational illustration"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                />
+            </div>
+        )}
         <CardHeader>
           <div className="flex justify-between items-start gap-4">
             <CardTitle className="text-xl font-medium leading-relaxed flex-1">{currentQuestion.question}</CardTitle>
