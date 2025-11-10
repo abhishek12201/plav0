@@ -56,25 +56,13 @@ export async function createPersonalizedStudyPlan(
 }
 
 export async function generatePersonalizedQuiz(
-  input: GeneratePersonalizedQuizInput & { userId: string }
-): Promise<(GeneratePersonalizedQuizOutput & { quizId: string }) | { error: string }> {
+  input: GeneratePersonalizedQuizInput
+): Promise<GeneratePersonalizedQuizOutput | { error: string }> {
   try {
     const result = await generateQuiz(input);
     
     if (result && 'questions' in result && result.questions) {
-        const { firestore } = getSdks();
-        const quizzesCol = collection(firestore, "users", input.userId, "quizzes");
-        const newQuizRef = doc(quizzesCol); // Create a new document reference with an auto-generated ID
-        
-        await setDoc(newQuizRef, {
-          userId: input.userId,
-          topic: input.topic,
-          difficulty: input.difficulty,
-          title: result.title,
-          questions: result.questions,
-          createdAt: Timestamp.now(),
-        });
-        return { ...result, quizId: newQuizRef.id };
+        return result;
     }
     
     // If result is not valid, treat as an error.

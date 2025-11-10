@@ -11,7 +11,8 @@ import type { QuizData } from './quiz-view';
 import { Input } from '../ui/input';
 import { Slider } from '../ui/slider';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
-import { useUser } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
+import { collection, doc, setDoc, Timestamp } from 'firebase/firestore';
 
 type QuizGeneratorProps = {
   onQuizGenerated: (data: QuizData) => void;
@@ -23,6 +24,7 @@ export default function QuizGenerator({ onQuizGenerated }: QuizGeneratorProps) {
   const [difficulty, setDifficulty] = React.useState("easy");
   const { toast } = useToast();
   const { user } = useUser();
+  const firestore = useFirestore();
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -55,20 +57,44 @@ export default function QuizGenerator({ onQuizGenerated }: QuizGeneratorProps) {
         topic,
         numberOfQuestions: numQuestions[0],
         difficulty: difficulty,
-        userId: user.uid,
       });
 
-      if (result && 'questions' in result && result.questions && 'quizId' in result) {
-        onQuizGenerated({
-          title: result.title,
-          questions: result.questions,
-          quizId: result.quizId,
-          topic: topic,
-        });
-        toast({
-          title: "Quiz Generated!",
-          description: "Your personalized quiz is ready and has been saved.",
-        });
+      if (result && 'questions' in result && result.questions) {
+        // AI part was successful, now save to Firestore on the client
+        try {
+          const quizzesCol = collection(firestore, "users", user.uid, "quizzes");
+          const newQuizRef = doc(quizzesCol); // Create a new document reference with an auto-generated ID
+          
+          const quizToSave = {
+            userId: user.uid,
+            topic: topic,
+            difficulty: difficulty,
+            title: result.title,
+            questions: result.questions,
+            createdAt: Timestamp.now(), // Use client-side timestamp for immediate UI feedback
+          };
+
+          await setDoc(newQuizRef, quizToSave);
+
+          onQuizGenerated({
+            title: result.title,
+            questions: result.questions,
+            quizId: newQuizRef.id,
+            topic: topic,
+          });
+
+          toast({
+            title: "Quiz Generated!",
+            description: "Your personalized quiz is ready and has been saved.",
+          });
+
+        } catch (error: any) {
+           toast({
+            title: "Firestore Error",
+            description: error.message || "Could not save the generated quiz.",
+            variant: "destructive",
+          });
+        }
       } else {
         const error = (result as {error: string})?.error || "Failed to generate quiz. Please try again.";
         toast({

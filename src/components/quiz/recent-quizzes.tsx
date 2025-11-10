@@ -9,8 +9,6 @@ import { Loader2, Book, ArrowRight } from 'lucide-react';
 import type { QuizData } from './quiz-view';
 import { Badge } from '../ui/badge';
 import { ScrollArea } from '../ui/scroll-area';
-import { dummyQuizzes } from '@/lib/dummy-data';
-import { useState, useEffect } from 'react';
 
 type RecentQuizzesProps = {
     onStartQuiz: (quiz: QuizData) => void;
@@ -28,7 +26,6 @@ type StoredQuiz = {
 export default function RecentQuizzes({ onStartQuiz }: RecentQuizzesProps) {
     const { user } = useUser();
     const firestore = useFirestore();
-    const [useDummyData, setUseDummyData] = useState(false);
 
     const quizzesQuery = useMemoFirebase(() => {
         if (!user) return null;
@@ -39,15 +36,8 @@ export default function RecentQuizzes({ onStartQuiz }: RecentQuizzesProps) {
         );
     }, [firestore, user]);
 
-    const { data: liveQuizzes, isLoading: isLiveLoading } = useCollection<StoredQuiz>(quizzesQuery);
+    const { data: quizzes, isLoading } = useCollection<StoredQuiz>(quizzesQuery);
 
-    useEffect(() => {
-        if (!isLiveLoading && (!liveQuizzes || liveQuizzes.length === 0)) {
-            setUseDummyData(true);
-        } else {
-            setUseDummyData(false);
-        }
-    }, [liveQuizzes, isLiveLoading]);
 
     const handleQuizSelect = (quiz: StoredQuiz) => {
         const serializableQuizData: QuizData = {
@@ -58,9 +48,6 @@ export default function RecentQuizzes({ onStartQuiz }: RecentQuizzesProps) {
         };
         onStartQuiz(serializableQuizData);
     }
-
-    const isLoading = isLiveLoading && !useDummyData;
-    const quizzes = useDummyData ? (dummyQuizzes as StoredQuiz[]) : liveQuizzes;
 
     return (
         <Card>
