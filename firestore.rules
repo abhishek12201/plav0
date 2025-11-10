@@ -50,7 +50,8 @@ service cloud.firestore {
      * @description Controls access to user-generated quizzes.
      * @path /quizzes/{quizId}
      * @allow (create) - Any authenticated user can create a quiz. The 'userId' field must match their own UID.
-     * @allow (get, list) - A user can read or list quizzes where their UID matches the 'userId' field in the quiz document.
+     * @allow (get) - A user can read a quiz if their UID matches the 'userId' field in the quiz document.
+     * @allow (list) - A user can list quizzes only if the query filters for their own 'userId'.
      * @deny (update, delete) - Quizzes are immutable and cannot be updated or deleted.
      * @principle Enforces ownership for read/create, and ensures data integrity by preventing modification.
      */
@@ -60,7 +61,7 @@ service cloud.firestore {
       }
       
       allow get: if isQuizOwner();
-      allow list: if request.auth != null && request.query.resource.data.userId == request.auth.uid;
+      allow list: if request.auth != null && request.query.filters.size() > 0 && 'userId' in request.query.filters && request.query.filters.userId == request.auth.uid;
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       allow update, delete: if false; // Quizzes are immutable
     }
