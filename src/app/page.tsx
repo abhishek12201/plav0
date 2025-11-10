@@ -93,7 +93,7 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <div className="mx-auto grid max-w-5xl items-center justify-center gap-8 sm:grid-cols-2 md:gap-12">
+            <div className="mx-auto grid max-w-5xl items-center justify-center gap-8 sm:grid-cols-2 md:gap-12 lg:grid-cols-2">
               {features.map((feature, index) => (
                 <Card key={index} className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10">
                   <CardHeader className="flex flex-row items-center gap-4">
