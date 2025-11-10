@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { provideAdaptiveFeedback, type ProvideAdaptiveFeedbackOutput, saveQuizAttempt } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, RefreshCcw, Flag, BrainCircuit } from 'lucide-react';
+import { Loader2, Sparkles, RefreshCcw, Flag, BrainCircuit, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { useUser } from '@/firebase';
@@ -21,6 +21,7 @@ import {
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Badge } from '../ui/badge';
+import { Slider } from '../ui/slider';
 
 type Question = {
   question: string;
@@ -36,12 +37,11 @@ export type QuizData = {
   topic?: string;
 };
 
-type QuizViewProps = {
-  quizData: QuizData;
-  onRetake: () => void;
-};
-
-type Answers = { [key: number]: string };
+type Answer = {
+  answer: string;
+  confidence: number;
+}
+type Answers = { [key: number]: Answer };
 type Flagged = { [key: number]: boolean };
 type FeedbackTone = "Encouraging" | "Constructive" | "Gamified";
 
@@ -56,6 +56,7 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
   const [flagged, setFlagged] = useState<Flagged>({});
   const [feedbackTone, setFeedbackTone] = useState<FeedbackTone>("Encouraging");
   const [attemptId, setAttemptId] = useState<string | null>(null);
+  const [confidence, setConfidence] = useState([3]);
 
   const { toast } = useToast();
   const { user } = useUser();
@@ -65,7 +66,7 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
     startTransition(async () => {
       const questionsWithUserAnswers = quizData.questions.map((q, i) => ({
         ...q,
-        userAnswer: currentAnswers[i] || "Not answered",
+        userAnswer: currentAnswers[i]?.answer || "Not answered",
       }));
 
       const feedbackResult = await provideFeedback({
@@ -98,10 +99,28 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
   }, [quizData, toast, user, attemptId]);
   
   const handleAnswerChange = (value: string) => {
-    setAnswers({ ...answers, [currentQuestionIndex]: value });
+    setAnswers(prev => ({
+      ...prev,
+      [currentQuestionIndex]: {
+        answer: value,
+        confidence: confidence[0],
+      }
+    }));
   };
 
   const handleNext = () => {
+    // Save confidence score for the current question
+    setAnswers(prev => ({
+      ...prev,
+      [currentQuestionIndex]: {
+        answer: prev[currentQuestionIndex]?.answer || '',
+        confidence: confidence[0],
+      }
+    }));
+
+    // Reset confidence slider for next question
+    setConfidence([3]);
+
     if (currentQuestionIndex < quizData.questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
@@ -116,11 +135,12 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
   const handleSubmit = async () => {
     let newScore = 0;
     quizData.questions.forEach((q, index) => {
-      if (q.type === 'multiple-choice' && answers[index] === q.correctAnswer) {
-        newScore++;
-      } else if (q.type === 'short-answer' && answers[index]?.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()) {
-        newScore++;
-      }
+        const userAnswer = answers[index]?.answer;
+        if (q.type === 'multiple-choice' && userAnswer === q.correctAnswer) {
+            newScore++;
+        } else if (q.type === 'short-answer' && userAnswer?.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()) {
+            newScore++;
+        }
     });
     const finalScore = newScore;
     setScore(finalScore);
@@ -241,6 +261,7 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
   const currentQuestion = quizData.questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex) / quizData.questions.length) * 100;
   const isFlagged = flagged[currentQuestionIndex];
+  const confidenceLabels = ["Guessing", "Unsure", "Somewhat Sure", "Confident", "Very Confident"];
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -279,7 +300,7 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
         </CardHeader>
         <CardContent>
           {currentQuestion.type === 'multiple-choice' ? (
-            <RadioGroup value={answers[currentQuestionIndex]} onValueChange={handleAnswerChange} className="space-y-3">
+            <RadioGroup value={answers[currentQuestionIndex]?.answer} onValueChange={handleAnswerChange} className="space-y-3">
               {currentQuestion.options.map((option, index) => (
                 <Label 
                   htmlFor={`q${currentQuestionIndex}-o${index}`} 
@@ -287,7 +308,7 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
                   className={cn(
                     "flex items-center space-x-4 p-4 rounded-lg border-2 transition-all cursor-pointer",
                     "hover:border-primary/60 hover:bg-primary/5",
-                    answers[currentQuestionIndex] === option 
+                    answers[currentQuestionIndex]?.answer === option 
                       ? "border-primary bg-primary/10" 
                       : "border-border"
                   )}
@@ -302,16 +323,43 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
               <Label htmlFor={`q${currentQuestionIndex}-short`}>Your Answer</Label>
               <Textarea
                 id={`q${currentQuestionIndex}-short`}
-                value={answers[currentQuestionIndex] || ''}
+                value={answers[currentQuestionIndex]?.answer || ''}
                 onChange={(e) => handleAnswerChange(e.target.value)}
                 placeholder="Type your answer here..."
                 className="min-h-[100px]"
               />
             </div>
           )}
+
+          <div className="mt-6 pt-6 border-t">
+              <Label htmlFor="confidence" className='flex items-center justify-between mb-3'>
+                <span>How confident are you?</span>
+                <span className="font-semibold text-primary">{confidenceLabels[confidence[0]-1]}</span>
+              </Label>
+              <div className='flex items-center gap-4'>
+                <Star className='h-5 w-5 text-muted-foreground'/>
+                <Slider
+                    id="confidence"
+                    name="confidence"
+                    min={1}
+                    max={5}
+                    step={1}
+                    value={confidence}
+                    onValueChange={setConfidence}
+                />
+                <div className='flex items-center gap-1'>
+                  <Star className='h-5 w-5 text-primary fill-primary'/>
+                  <Star className='h-5 w-5 text-primary fill-primary'/>
+                  <Star className='h-5 w-5 text-primary fill-primary'/>
+                  <Star className='h-5 w-5 text-primary fill-primary'/>
+                  <Star className='h-5 w-5 text-primary fill-primary'/>
+                </div>
+              </div>
+          </div>
+
         </CardContent>
       </Card>
-      <Button onClick={handleNext} disabled={!answers[currentQuestionIndex]} className="w-full mt-8" size="lg">
+      <Button onClick={handleNext} disabled={!answers[currentQuestionIndex]?.answer} className="w-full mt-8" size="lg">
         {currentQuestionIndex < quizData.questions.length - 1 ? 'Next Question' : 'Finish Quiz'}
       </Button>
     </div>

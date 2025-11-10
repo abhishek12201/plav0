@@ -228,9 +228,14 @@
         },
         "answers": {
           "type": "array",
-          "description": "Array of user's answers to the quiz questions.",
+          "description": "Array of user's answers and confidence scores for each question.",
           "items": {
-            "type": "string"
+            "type": "object",
+            "properties": {
+              "answer": { "type": "string" },
+              "confidence": { "type": "number" }
+            },
+            "required": ["answer", "confidence"]
           }
         },
         "score": {

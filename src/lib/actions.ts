@@ -28,10 +28,15 @@ import {
 import { getSdks } from "@/firebase";
 import { addDoc, collection, doc, serverTimestamp, setDoc } from "firebase/firestore";
 
+type Answer = {
+  answer: string;
+  confidence: number;
+}
+
 export type UserQuizAttempt = {
   quizId?: string;
   userId: string;
-  answers?: { [key: number]: string };
+  answers?: { [key: number]: Answer };
   score?: number;
   topic?: string;
   totalQuestions?: number;
@@ -129,8 +134,8 @@ export async function saveQuizAttempt(
     const { firestore } = getSdks();
     const attemptsCol = collection(firestore, "users", input.userId, "quizAttempts");
     
-    if (input.attemptId) {
-      // This is an update, likely to add feedback
+    if (input.attemptId && input.feedback) {
+      // This is an update to add feedback
       const attemptRef = doc(attemptsCol, input.attemptId);
       await setDoc(attemptRef, { feedback: input.feedback }, { merge: true });
       return { success: true, attemptId: input.attemptId };
