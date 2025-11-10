@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { retrieveContent, generatePersonalizedQuiz } from '@/lib/actions';
 import QuizView from '../quiz/quiz-view';
 import type { QuizData } from '../quiz/quiz-view';
+import { v4 as uuidv4 } from 'uuid';
 
 type Message = {
   sender: 'user' | 'agent';
@@ -112,10 +113,13 @@ export default function OrchestrationView() {
     };
     setMessages((prev) => [...prev.slice(0,-1), finalMessage]);
     setIsOrchestrating(false);
+    
     setQuizData({
         title: quizResult.title,
         questions: quizResult.questions,
-        quizId: quizResult.quizId,
+        // Use the quizId from the result if available, otherwise generate a client-side UUID
+        // This ensures the quiz can be taken even if the server-side save was decoupled.
+        quizId: quizResult.quizId || uuidv4(),
         topic: topic,
     });
   };

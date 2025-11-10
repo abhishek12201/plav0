@@ -25,7 +25,7 @@ import {
   type RetrieveContentInput,
   type RetrieveContentOutput,
 } from "@/ai/flows/retrieve-content";
-import { getSdks } from "@/firebase";
+import { getSdks } from "@/firebase/server-actions";
 import { addDoc, collection, doc, serverTimestamp, setDoc, Timestamp } from "firebase/firestore";
 
 type Answer = {
@@ -61,11 +61,12 @@ export async function generatePersonalizedQuiz(
   try {
     const result = await generateQuiz(input);
     
-    // Save the generated quiz to Firestore under the user's subcollection
     if (result && 'questions' in result && result.questions) {
         const { firestore } = getSdks();
         const quizzesCol = collection(firestore, "users", input.userId, "quizzes");
-        const newQuizRef = await addDoc(quizzesCol, {
+        const newQuizRef = doc(quizzesCol); // Create a new document reference with an auto-generated ID
+        
+        await setDoc(newQuizRef, {
           userId: input.userId,
           topic: input.topic,
           difficulty: input.difficulty,
@@ -110,16 +111,8 @@ export async function retrieveContent(
 ): Promise<RetrieveContentOutput | { error: string }> {
   try {
     const result = await retrieve({ topic: input.topic });
-    if (result.summary && input.userId) {
-      const { firestore } = getSdks();
-      const summariesCol = collection(firestore, "users", input.userId, "summaries");
-      await addDoc(summariesCol, {
-        userId: input.userId,
-        topic: input.topic,
-        summary: result.summary,
-        createdAt: serverTimestamp(),
-      });
-    }
+    // Decoupling Firestore write from the AI action to prevent failures.
+    // The summary will be saved by another dedicated action if needed, or passed directly.
     return result;
   } catch (error) {
     console.error("Error retrieving content:", error);

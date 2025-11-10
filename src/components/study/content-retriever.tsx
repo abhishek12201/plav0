@@ -55,13 +55,13 @@ export default function ContentRetriever({ onContentRetrieved, showSummary = tru
         } else {
           toast({
             title: "Content Retrieved!",
-            description: "Your summary is ready and has been saved.",
+            description: "A summary for your topic is ready.",
           });
         }
       } else {
         toast({
           title: "Error",
-          description: "Failed to retrieve content. Please try again.",
+          description: (result as {error: string}).error || "Failed to retrieve content. Please try again.",
           variant: "destructive",
         });
       }
