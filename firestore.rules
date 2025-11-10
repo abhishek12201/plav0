@@ -61,7 +61,7 @@ service cloud.firestore {
       }
       
       allow get: if isQuizOwner();
-      allow list: if request.auth != null && request.query.filters.size() == 1 && 'userId' in request.query.filters && request.query.filters['userId'] == request.auth.uid;
+      allow list: if request.auth != null && request.query.resource.data.userId == request.auth.uid;
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       allow update, delete: if false; // Quizzes are immutable
     }
