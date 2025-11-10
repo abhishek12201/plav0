@@ -8,22 +8,22 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 const features = [
   {
-    icon: <Bot className="h-10 w-10 text-accent" />,
+    icon: <Bot className="h-10 w-10 text-primary" />,
     title: "AI-Powered Quiz Generator",
     description: "Generate personalized quizzes from your learning content to test your knowledge and retention.",
   },
   {
-    icon: <BookOpenText className="h-10 w-10 text-accent" />,
+    icon: <BookOpenText className="h-10 w-10 text-primary" />,
     title: "Personalized Study Plans",
     description: "Receive AI-driven study plans that adapt to your progress and target your knowledge gaps.",
   },
   {
-    icon: <Target className="h-10 w-10 text-accent" />,
+    icon: <Target className="h-10 w-10 text-primary" />,
     title: "Adaptive Feedback",
     description: "Get customized feedback on your quiz performance to understand your mistakes and learn effectively.",
   },
   {
-    icon: <BarChart className="h-10 w-10 text-accent" />,
+    icon: <BarChart className="h-10 w-10 text-primary" />,
     title: "Performance Metrics",
     description: "Visualize your learning journey with an intuitive dashboard tracking your progress and skills.",
   },

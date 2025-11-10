@@ -14,7 +14,7 @@ const data = [
 const chartConfig = {
   score: {
     label: "Score",
-    color: "hsl(var(--accent))",
+    color: "hsl(var(--chart-2))",
   },
 };
 
@@ -26,8 +26,8 @@ export default function KnowledgeGapChart() {
           <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
             <PolarGrid stroke="hsl(var(--border))" />
             <PolarAngleAxis dataKey="subject" stroke="hsl(var(--muted-foreground))" tick={{ fill: 'hsl(var(--foreground))', fontSize: 12 }} />
-            <Tooltip cursor={{ fill: 'hsl(var(--accent) / 0.1)' }} content={<ChartTooltipContent />} />
-            <Radar name="Score" dataKey="score" stroke="hsl(var(--accent))" fill="hsl(var(--accent))" fillOpacity={0.6} />
+            <Tooltip cursor={{ fill: 'hsl(var(--chart-2) / 0.1)' }} content={<ChartTooltipContent />} />
+            <Radar name="Score" dataKey="score" stroke="hsl(var(--chart-2))" fill="hsl(var(--chart-2))" fillOpacity={0.6} />
           </RadarChart>
         </ResponsiveContainer>
       </ChartContainer>

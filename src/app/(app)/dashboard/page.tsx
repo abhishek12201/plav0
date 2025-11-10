@@ -1,30 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { BookOpenText, Target, ClipboardCheck, BarChartHorizontalBig } from "lucide-react";
-import Image from "next/image";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import ProgressChart from "@/components/dashboard/progress-chart";
 import KnowledgeGapChart from "@/components/dashboard/knowledge-gap-chart";
 import RecentActivity from "@/components/dashboard/recent-activity";
 
 export default function DashboardPage() {
-  const welcomeImage = PlaceHolderImages.find(p => p.id === 'dashboard-welcome');
   return (
-    <>
-      <div className="relative w-full rounded-lg overflow-hidden h-64 mb-6">
-        {welcomeImage && (
-          <Image
-            src={welcomeImage.imageUrl}
-            alt={welcomeImage.description}
-            fill
-            className="object-cover"
-            data-ai-hint={welcomeImage.imageHint}
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-        <div className="absolute bottom-0 p-6">
-          <h1 className="text-4xl font-bold tracking-tight text-white font-headline">Welcome Back, Learner!</h1>
-          <p className="mt-2 text-lg text-gray-300">Ready to unlock your potential today?</p>
-        </div>
+    <div className="max-w-7xl mx-auto w-full">
+      <div className="mb-6">
+        <h1 className="text-4xl font-bold tracking-tight font-headline">Welcome Back, Learner!</h1>
+        <p className="mt-2 text-lg text-muted-foreground">Ready to unlock your potential today?</p>
       </div>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -92,6 +77,6 @@ export default function DashboardPage() {
        <div className="mt-6">
           <RecentActivity />
        </div>
-    </>
+    </div>
   );
 }
