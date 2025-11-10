@@ -35,6 +35,21 @@
           "type": "string",
           "description": "The date and time the user last signed in.",
           "format": "date-time"
+        },
+        "preferences": {
+          "type": "object",
+          "description": "User-specific settings and preferences.",
+          "properties": {
+            "feedbackTone": {
+              "type": "string",
+              "description": "The user's preferred tone for AI-generated feedback.",
+              "enum": ["Encouraging", "Constructive", "Gamified"]
+            },
+            "quizLength": {
+              "type": "number",
+              "description": "The user's preferred default number of quiz questions."
+            }
+          }
         }
       },
       "required": [
@@ -391,3 +406,5 @@
     "reasoning": "The Firestore data structure has been updated to move quizzes into a subcollection of the user document (`/users/{userId}/quizzes/{quizId}`). This change resolves persistent security rule errors by simplifying authorization. Access to a user's quizzes is now implicitly controlled by access to the parent user document, making security rules more robust and easier to manage. This path-based ownership model is more secure and scalable than relying on query-based rules for the top-level `/quizzes` collection. Other collections remain as they were, following principles of authorization independence and clear ownership."
   }
 }
+
+    
