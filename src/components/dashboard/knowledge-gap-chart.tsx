@@ -1,6 +1,6 @@
 "use client";
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart, ResponsiveContainer, Tooltip } from 'recharts';
-import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 
 const data = [
   { subject: 'Algebra', score: 80, fullMark: 100 },
@@ -16,7 +16,7 @@ const chartConfig = {
     label: "Score",
     color: "hsl(var(--chart-2))",
   },
-};
+} satisfies ChartConfig;
 
 export default function KnowledgeGapChart() {
   return (

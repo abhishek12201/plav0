@@ -1,6 +1,6 @@
 "use client";
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 
 const data = [
   { month: 'Jan', score: 65 },
@@ -16,7 +16,7 @@ const chartConfig = {
     label: "Score",
     color: "hsl(var(--primary))",
   },
-};
+} satisfies ChartConfig;
 
 export default function ProgressChart() {
   return (
