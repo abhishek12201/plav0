@@ -7,6 +7,7 @@
  * Data Structure:
  * - /users/{userId}: User profiles, accessible only by the user themselves.
  * - /users/{userId}/studyPlans/{studyPlanId}: Study plans owned by a specific user.
+ * - /users/{userId}/summaries/{summaryId}: Content summaries owned by a specific user.
  * - /learningMaterials/{learningMaterialId}: Learning materials, publicly readable but only editable by the owner.
  * - /learningMaterials/{learningMaterialId}/quizzes/{quizId}: Quizzes associated with learning materials, write access should only be given to learning material owner.
  * - /users/{userId}/quizAttempts/{quizAttemptId}: User's quiz attempts, only accessible by the user themselves.
@@ -67,6 +68,24 @@ service cloud.firestore {
       allow create: if isOwner(userId) && request.resource.data.userId == userId;
       allow update: if isOwner(userId) && resource.data.userId == userId && resource != null; // Enforce immutability of userId & existence check.
       allow delete: if isOwner(userId) && resource != null; // Check for existence before deleting.
+    }
+    
+    /**
+     * @description Controls access to content summaries for a specific user.
+     * @path /users/{userId}/summaries/{summaryId}
+     * @allow (create, get, list, update, delete) - User with UID 'user_abc' can manage summaries under their own profile.
+     * @deny (create, get, list, update, delete) - User with UID 'user_xyz' cannot manage summaries under user 'user_abc'.
+     * @principle Enforces document ownership for all content summary operations.
+     */
+    match /users/{userId}/summaries/{summaryId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isOwner(userId) && resource.data.userId == userId && resource != null;
+      allow delete: if isOwner(userId) && resource != null;
     }
 
     /**
@@ -135,3 +154,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
