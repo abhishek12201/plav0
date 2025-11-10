@@ -21,6 +21,9 @@ const GeneratePersonalizedQuizInputSchema = z.object({
     .number()
     .default(5)
     .describe('The number of questions to generate for the quiz.'),
+  difficulty: z
+    .string()
+    .describe('The desired difficulty of the quiz (e.g., easy, medium, hard).'),
 });
 export type GeneratePersonalizedQuizInput = z.infer<
   typeof GeneratePersonalizedQuizInputSchema
@@ -56,15 +59,19 @@ const generateQuizPrompt = ai.definePrompt({
   name: 'generateQuizPrompt',
   input: {schema: GeneratePersonalizedQuizInputSchema},
   output: {schema: GeneratePersonalizedQuizOutputSchema},
-  prompt: `You are an expert quiz generator for students.
+  prompt: `You are an expert quiz generator for students, specializing in educational content.
 
-  Your task is to generate a multiple-choice quiz based on the provided learning content and topic. The quiz should have exactly {{{numberOfQuestions}}} questions.
+  Your task is to generate a multiple-choice quiz based on the provided learning content, topic, and difficulty level. The quiz must have exactly {{{numberOfQuestions}}} questions.
 
   Each question must have exactly 4 options, and one of them must be the correct answer.
 
-  The questions should be relevant to the key concepts in the learning content.
+  The difficulty should align with Bloom's Taxonomy:
+  - 'easy': Focus on Remembering and Understanding (e.g., definitions, facts, explaining concepts).
+  - 'medium': Focus on Applying and Analyzing (e.g., using information in new situations, drawing connections).
+  - 'hard': Focus on Evaluating and Creating (e.g., justifying a stance, producing new or original work).
 
   Topic: {{{topic}}}
+  Difficulty: {{{difficulty}}}
   Learning Content:
   ---
   {{{learningContent}}}
