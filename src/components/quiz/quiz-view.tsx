@@ -74,7 +74,6 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
     setFeedback(null);
     startTransition(async () => {
       if (!user) {
-        // This case should ideally not be hit if we are saving attempts, but as a safeguard.
         return;
       }
       const questionsWithUserAnswers = quizData.questions.map((q, i) => ({
@@ -130,7 +129,6 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
 
 
   const handleNext = () => {
-    // Save confidence score for the current question IF it was touched
     if (confidenceTouched) {
       setAnswers(prev => ({
         ...prev,
@@ -141,8 +139,6 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
       }));
     }
 
-
-    // Reset confidence slider and touched state for next question
     setConfidence([3]);
     setConfidenceTouched(false);
 
@@ -169,8 +165,7 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
     
     let newScore = 0;
     quizData.questions.forEach((q, index) => {
-      const userAnswer = answers[index]?.answer;
-      if (userAnswer === q.correctAnswer) {
+      if (answers[index]?.answer === q.correctAnswer) {
         newScore++;
       }
     });
@@ -198,7 +193,6 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
         description: "Your results have been saved.",
       });
 
-      // Now that the attempt is saved and we have an ID, get the feedback
       getFeedback(finalScore, answers, feedbackTone, newAttemptId);
     
     } catch(error: any) {
@@ -299,7 +293,7 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
   const progress = ((currentQuestionIndex) / quizData.questions.length) * 100;
   const isFlagged = flagged[currentQuestionIndex];
   const confidenceLabels = ["Guessing", "Unsure", "Somewhat Sure", "Confident", "Very Confident"];
-
+  
   if (!currentQuestion) {
     return (
       <div className="flex flex-col items-center justify-center text-center text-muted-foreground p-8">
@@ -409,5 +403,3 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
     </div>
   );
 }
-
-    

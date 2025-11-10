@@ -5,16 +5,22 @@ import ProgressChart from "@/components/dashboard/progress-chart";
 import KnowledgeGapChart from "@/components/dashboard/knowledge-gap-chart";
 import { useUserQuizAttempts } from "@/hooks/use-user-data";
 import { Loader2, BarChart3 } from "lucide-react";
+import { useMemo } from "react";
 
 export default function MetricsPage() {
     const { attempts, isLoading } = useUserQuizAttempts();
 
-    const chartData = {
-        progress: attempts?.map(attempt => ({
-            date: new Date(attempt.attemptTime.seconds * 1000).toLocaleDateString(),
+    const chartData = useMemo(() => {
+        if (!attempts) {
+            return { progress: [], knowledge: [] };
+        }
+
+        const progress = attempts.map(attempt => ({
+            date: new Date((attempt.attemptTime as any).seconds * 1000).toLocaleDateString(),
             score: (attempt.score / attempt.totalQuestions) * 100
-        })).reverse() || [],
-        knowledge: attempts ? Object.values(attempts.reduce((acc, attempt) => {
+        })).reverse();
+
+        const knowledgeGaps = Object.values(attempts.reduce((acc, attempt) => {
             if (!acc[attempt.topic]) {
                 acc[attempt.topic] = { topic: attempt.topic, scores: [], fullMark: 100 };
             }
@@ -23,8 +29,11 @@ export default function MetricsPage() {
         }, {} as Record<string, { topic: string; scores: number[], fullMark: 100 }>)).map(item => ({
             ...item,
             score: item.scores.reduce((a, b) => a + b, 0) / item.scores.length
-        })) : []
-    }
+        }));
+
+        return { progress, knowledge: knowledgeGaps };
+
+    }, [attempts]);
 
     return (
         <div className="max-w-7xl mx-auto w-full">

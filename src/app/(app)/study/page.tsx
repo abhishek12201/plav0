@@ -1,3 +1,4 @@
+
 import StudyPlanGenerator from "@/components/study/study-plan-generator";
 import ContentSummarizer from "@/components/study/content-summarizer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
