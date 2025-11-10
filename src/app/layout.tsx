@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'Personalized Learning Nexus',
+  title: 'plav0',
   description: 'Your personal AI-powered learning agent.',
 };
 

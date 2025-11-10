@@ -52,7 +52,7 @@ export default function Home() {
         </nav>
       </header>
       <main className="flex-1">
-        <section className="relative w-full pt-12 md:pt-24 lg:pt-32">
+        <section className="relative w-full flex-grow flex items-center justify-center py-12 md:py-24 lg:py-32">
           {heroImage && (
              <Image
               src={heroImage.imageUrl}
@@ -63,8 +63,8 @@ export default function Home() {
               data-ai-hint={heroImage.imageHint}
             />
           )}
-          <div className="container px-4 md:px-6 space-y-10 xl:space-y-16">
-            <div className="max-w-[800px] mx-auto text-center">
+          <div className="container px-4 md:px-6">
+            <div className="max-w-[800px] mx-auto text-center flex flex-col items-center">
               <h1 className="lg:leading-tighter text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl xl:text-7xl font-headline">
                 The Future of Learning, {" "}
                 <span className="text-primary">Personalized for You</span>
@@ -110,7 +110,7 @@ export default function Home() {
         </section>
       </main>
       <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
-        <p className="text-xs text-muted-foreground">&copy; 2024 Personalized Learning Nexus. All rights reserved.</p>
+        <p className="text-xs text-muted-foreground">&copy; 2024 plav0. All rights reserved.</p>
         <nav className="sm:ml-auto flex gap-4 sm:gap-6">
           <Link href="#" className="text-xs hover:underline underline-offset-4">
             Terms of Service
