@@ -26,11 +26,11 @@ import {
   type RetrieveContentOutput,
 } from "@/ai/flows/retrieve-content";
 import { getSdks } from "@/firebase";
-import { addDoc, collection, doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { addDoc, collection, doc, serverTimestamp, setDoc, Timestamp } from "firebase/firestore";
 
 type Answer = {
   answer: string;
-  confidence: number;
+  confidence?: number;
 }
 
 export type UserQuizAttempt = {
@@ -71,7 +71,7 @@ export async function generatePersonalizedQuiz(
           difficulty: input.difficulty,
           title: result.title,
           questions: result.questions,
-          createdAt: serverTimestamp(),
+          createdAt: Timestamp.now(),
         });
         return { ...result, quizId: newQuizRef.id };
     }
