@@ -32,7 +32,7 @@ export type GeneratePersonalizedQuizInput = z.infer<
 
 const QuestionSchema = z.object({
   question: z.string().describe('The text of the question.'),
-  type: z.literal('multiple-choice').describe("The type of question, which must be 'multiple-choice'."),
+  type: z.string().describe("The type of question. This must always be 'multiple-choice'."),
   options: z
     .array(z.string())
     .describe('An array of 4 possible answers for multiple-choice questions.'),

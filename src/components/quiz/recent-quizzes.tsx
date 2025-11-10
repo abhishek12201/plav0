@@ -85,7 +85,7 @@ export default function RecentQuizzes({ onStartQuiz }: RecentQuizzesProps) {
                                     <p className="font-semibold text-sm leading-tight">{quiz.title}</p>
                                     <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground">
                                        <Badge variant="outline" className="capitalize">{quiz.difficulty}</Badge>
-                                       <Badge variant="secondary">{quiz.questions?.length || 0} questions</Badge>
+                                       <Badge variant="secondary">{quiz.questions?.length || '0'} questions</Badge>
                                     </div>
                                 </div>
                                 <Button size="sm" variant="ghost" onClick={() => handleQuizSelect(quiz)}>
