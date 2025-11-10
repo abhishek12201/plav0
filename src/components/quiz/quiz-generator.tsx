@@ -41,7 +41,7 @@ export default function QuizGenerator({ onQuizGenerated }: QuizGeneratorProps) {
         numberOfQuestions: numQuestions[0],
       });
 
-      if (result && 'questions' in result) {
+      if (result && 'questions' in result && result.questions) {
         onQuizGenerated({
           title: result.title,
           questions: result.questions,
@@ -49,10 +49,10 @@ export default function QuizGenerator({ onQuizGenerated }: QuizGeneratorProps) {
         });
         toast({
           title: "Quiz Generated!",
-          description: "Your personalized quiz is ready to be taken.",
+          description: "Your personalized quiz is ready.",
         });
       } else {
-        const error = (result as {error: string}).error || "Failed to generate quiz. Please try again.";
+        const error = (result as {error: string})?.error || "Failed to generate quiz. Please try again.";
         toast({
           title: "Error",
           description: error,
@@ -89,10 +89,10 @@ export default function QuizGenerator({ onQuizGenerated }: QuizGeneratorProps) {
             max={10}
             step={1}
             value={numQuestions}
-            onValueChange={setNumQuestions}
+            onValuegaValueChange={setNumQuestions}
           />
         </div>
-        <Button type="submit" disabled={isPending} className="w-full !mt-8">
+        <Button type="submit" disabled={isPending} className="w-full !mt-8" size="lg">
           {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
           Generate Quiz
         </Button>

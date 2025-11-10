@@ -86,23 +86,27 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
   if (isFinished) {
     return (
       <div className="max-w-3xl mx-auto">
-        <h2 className="text-2xl font-bold font-headline text-center">{quizData.title} - Results</h2>
-        <div className="text-center my-4">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold font-headline">{quizData.title} - Results</h2>
+          <p className="text-muted-foreground mt-1">Here's how you did.</p>
+        </div>
+        <div className="text-center my-6">
           <p className="text-6xl font-bold text-primary">{score}</p>
           <p className="text-lg text-muted-foreground">out of {quizData.questions.length} correct</p>
         </div>
         <Card className="mb-4 bg-card/50">
           <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2"><Sparkles className="text-primary"/> Adaptive Feedback</CardTitle>
+            <CardDescription>AI-powered suggestions to help you improve.</CardDescription>
           </CardHeader>
           <CardContent>
-            {isPending && <div className="flex justify-center items-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>}
+            {isPending && <div className="flex justify-center items-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}
             {feedback ? (
-               <div className="space-y-4 text-sm bg-secondary/30 p-4 rounded-md h-full overflow-y-auto">
-                 <pre className="whitespace-pre-wrap font-body text-sm text-foreground">{feedback}</pre>
+               <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-2 prose-headings:my-3 bg-secondary/30 p-4 rounded-md h-[300px] overflow-y-auto">
+                 <pre className="whitespace-pre-wrap font-body text-sm text-foreground bg-transparent p-0 border-0">{feedback}</pre>
                </div>
             ) : !isPending && (
-              <p className="text-muted-foreground">Generating your personalized feedback...</p>
+              <p className="text-muted-foreground text-center py-8">Generating your personalized feedback...</p>
             )}
           </CardContent>
         </Card>
@@ -112,30 +116,42 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
   }
 
   const currentQuestion = quizData.questions[currentQuestionIndex];
-  const progress = ((currentQuestionIndex + 1) / quizData.questions.length) * 100;
+  const progress = ((currentQuestionIndex) / quizData.questions.length) * 100;
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold font-headline text-center mb-2">{quizData.title}</h2>
-      <p className="text-center text-muted-foreground mb-4">Question {currentQuestionIndex + 1} of {quizData.questions.length}</p>
-      <Progress value={progress} className="mb-8" />
+      <div className="text-center mb-4">
+        <h2 className="text-2xl font-bold font-headline text-center mb-2">{quizData.title}</h2>
+        <p className="text-center text-muted-foreground">Question {currentQuestionIndex + 1} of {quizData.questions.length}</p>
+      </div>
+      <Progress value={progress} className="mb-8 h-2" />
       
-      <Card className="bg-card/50">
+      <Card className="bg-card/50 border-none shadow-none">
         <CardHeader>
-          <CardTitle className="text-xl">{currentQuestion.question}</CardTitle>
+          <CardTitle className="text-xl font-medium leading-relaxed">{currentQuestion.question}</CardTitle>
         </CardHeader>
         <CardContent>
-          <RadioGroup value={answers[currentQuestionIndex]} onValueChange={handleAnswerChange} className="space-y-2">
+          <RadioGroup value={answers[currentQuestionIndex]} onValueChange={handleAnswerChange} className="space-y-3">
             {currentQuestion.options.map((option, index) => (
-              <Label htmlFor={`q${currentQuestionIndex}-o${index}`} key={index} className={cn("flex items-center space-x-3 p-4 rounded-lg border transition-colors cursor-pointer", answers[currentQuestionIndex] === option ? "border-primary bg-primary/10" : "border-border hover:bg-secondary/50")}>
-                <RadioGroupItem value={option} id={`q${currentQuestionIndex}-o${index}`} />
-                <span>{option}</span>
+              <Label 
+                htmlFor={`q${currentQuestionIndex}-o${index}`} 
+                key={index} 
+                className={cn(
+                  "flex items-center space-x-4 p-4 rounded-lg border-2 transition-all cursor-pointer",
+                  "hover:border-primary/60 hover:bg-primary/5",
+                  answers[currentQuestionIndex] === option 
+                    ? "border-primary bg-primary/10" 
+                    : "border-border"
+                )}
+              >
+                <RadioGroupItem value={option} id={`q${currentQuestionIndex}-o${index}`} className="h-5 w-5"/>
+                <span className="text-base flex-1">{option}</span>
               </Label>
             ))}
           </RadioGroup>
         </CardContent>
       </Card>
-      <Button onClick={handleNext} disabled={!answers[currentQuestionIndex]} className="w-full mt-6">
+      <Button onClick={handleNext} disabled={!answers[currentQuestionIndex]} className="w-full mt-8" size="lg">
         {currentQuestionIndex < quizData.questions.length - 1 ? 'Next Question' : 'Finish Quiz'}
       </Button>
     </div>
