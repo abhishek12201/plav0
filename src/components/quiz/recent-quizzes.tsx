@@ -2,7 +2,7 @@
 'use client';
 
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { collection, query, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Loader2, Book, ArrowRight } from 'lucide-react';
@@ -20,6 +20,7 @@ type StoredQuiz = {
     topic: string;
     difficulty: string;
     questions: any[];
+    createdAt: Timestamp;
 }
 
 export default function RecentQuizzes({ onStartQuiz }: RecentQuizzesProps) {
@@ -39,12 +40,14 @@ export default function RecentQuizzes({ onStartQuiz }: RecentQuizzesProps) {
     const { data: quizzes, isLoading } = useCollection<StoredQuiz>(quizzesQuery);
 
     const handleQuizSelect = (quiz: StoredQuiz) => {
-        onStartQuiz({
+        // Create a new object with only serializable data to avoid passing Firestore Timestamps
+        const serializableQuizData: QuizData = {
             quizId: quiz.id,
             title: quiz.title,
             topic: quiz.topic,
             questions: quiz.questions
-        });
+        };
+        onStartQuiz(serializableQuizData);
     }
 
     return (
