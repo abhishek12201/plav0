@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
@@ -7,14 +8,25 @@ import { Label } from "@/components/ui/label";
 import { Search, Loader2 } from "lucide-react";
 import { retrieveContent } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/firebase";
 
 export default function ContentRetriever() {
   const [isPending, startTransition] = useTransition();
   const [summary, setSummary] = useState("");
   const { toast } = useToast();
+  const { user } = useUser();
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!user) {
+      toast({
+        title: "Not Logged In",
+        description: "You must be logged in to retrieve content.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const formData = new FormData(event.currentTarget);
     const topic = formData.get("topic") as string;
 
@@ -29,13 +41,13 @@ export default function ContentRetriever() {
     
     setSummary("");
     startTransition(async () => {
-      const result = await retrieveContent({ topic });
+      const result = await retrieveContent({ topic, userId: user.uid });
 
       if (result && result.summary) {
         setSummary(result.summary);
         toast({
           title: "Content Retrieved!",
-          description: "Your summary is ready.",
+          description: "Your summary is ready and has been saved.",
         });
       } else {
         toast({

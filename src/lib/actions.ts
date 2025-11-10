@@ -1,3 +1,4 @@
+
 "use server";
 import {
   createPersonalizedStudyPlan as createPlan,
@@ -24,6 +25,8 @@ import {
   type RetrieveContentInput,
   type RetrieveContentOutput,
 } from "@/ai/flows/retrieve-content";
+import { getSdks } from "@/firebase";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 
 
 export async function createPersonalizedStudyPlan(
@@ -71,10 +74,21 @@ export async function summarizeLearningContent(
 }
 
 export async function retrieveContent(
-  input: RetrieveContentInput
+  input: RetrieveContentInput & { userId: string }
 ): Promise<RetrieveContentOutput | { error: string }> {
   try {
-    return await retrieve(input);
+    const result = await retrieve({ topic: input.topic });
+    if (result.summary && input.userId) {
+      const { firestore } = getSdks();
+      const summariesCol = collection(firestore, "users", input.userId, "summaries");
+      await addDoc(summariesCol, {
+        userId: input.userId,
+        topic: input.topic,
+        summary: result.summary,
+        createdAt: serverTimestamp(),
+      });
+    }
+    return result;
   } catch (error) {
     console.error("Error retrieving content:", error);
     return { error: "Sorry, I couldn't retrieve content at the moment. Please try again later." };
