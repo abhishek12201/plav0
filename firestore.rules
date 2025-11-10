@@ -3,148 +3,99 @@
  * @file Firestore Security Rules for Personalized Learning Nexus.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for personal data and a public-read, owner-write model for learning materials.
+ * This ruleset enforces a strict user-ownership model for all personal data, including quizzes, study plans, summaries, and quiz attempts.
+ * Learning materials remain publicly readable to facilitate discovery.
  *
  * Data Structure:
  * - /users/{userId}: User profiles, accessible only by the user themselves.
- * - /quizzes/{quizId}: User-generated quizzes, readable only by the creator.
+ * - /users/{userId}/quizzes/{quizId}: Quizzes owned by a specific user.
  * - /users/{userId}/studyPlans/{studyPlanId}: Study plans owned by a specific user.
  * - /users/{userId}/summaries/{summaryId}: Content summaries owned by a specific user.
- * - /learningMaterials/{learningMaterialId}: Learning materials, publicly readable but only editable by the owner.
  * - /users/{userId}/quizAttempts/{quizAttemptId}: User's quiz attempts, only accessible by the user themselves.
+ * - /learningMaterials/{learningMaterialId}: Learning materials, publicly readable but only editable by the owner.
  *
  * Key Security Decisions:
- * - User data is strictly private and only accessible to the owning user.
+ * - All user-generated content is stored in subcollections under `/users/{userId}` to leverage path-based security. This is more robust and scalable than query-based rules.
  * - Learning materials are publicly readable to facilitate discovery.
- * - The structure is designed to maintain a homogeneous security posture, enhancing debuggability by making authorization intent explicit.
+ * - The structure ensures a homogeneous security posture within subcollections, enhancing debuggability.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to user profiles.
+     * @description Controls access to user profiles and all their subcollections.
      * @path /users/{userId}
-     * @allow (create) - User with UID 'user_abc' can create their profile document if {userId} == 'user_abc'.
-     * @allow (get, list) - User with UID 'user_abc' can read their profile document if {userId} == 'user_abc'.
-     * @allow (update, delete) - User with UID 'user_abc' can update/delete their profile document if {userId} == 'user_abc'.
-     * @deny (create) - User with UID 'user_xyz' cannot create a profile document where {userId} == 'user_abc'.
-     * @deny (get, list) - User with UID 'user_xyz' cannot read a profile document where {userId} == 'user_abc'.
-     * @deny (update, delete) - User with UID 'user_xyz' cannot update/delete a profile document where {userId} == 'user_abc'.
-     * @principle Enforces document ownership for all operations.
+     * @allow (get, update, delete) - User can manage their own profile.
+     * @allow (create) - User can create their own profile.
+     * @deny (list) - Disallows listing all users.
+     * @principle Enforces document ownership for all operations on a user's own data.
      */
     match /users/{userId} {
-      function isOwner(userId) {
+      function isOwner() {
         return request.auth != null && request.auth.uid == userId;
       }
 
-      allow get: if isOwner(userId);
+      allow get, update, delete: if isOwner();
+      allow create: if isOwner() && request.resource.data.id == userId;
       allow list: if false; // User listing is not permitted.
 
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isOwner(userId) && resource.data.id == userId; // Enforce immutability of userId.
-      allow delete: if isOwner(userId) && resource != null; // Check for existence before deleting.
-    }
-    
-    /**
-     * @description Controls access to user-generated quizzes.
-     * @path /quizzes/{quizId}
-     * @allow (create) - Any authenticated user can create a quiz. The 'userId' field must match their own UID.
-     * @allow (get) - A user can read a quiz if their UID matches the 'userId' field in the quiz document.
-     * @allow (list) - A user can list quizzes only if the query filters for their own 'userId'.
-     * @deny (update, delete) - Quizzes are immutable and cannot be updated or deleted.
-     * @principle Enforces ownership for read/create, and ensures data integrity by preventing modification.
-     */
-    match /quizzes/{quizId} {
-      function isQuizOwner() {
-        return request.auth != null && resource.data.userId == request.auth.uid;
+      /**
+       * @description Controls access to quizzes for a specific user.
+       * @path /users/{userId}/quizzes/{quizId}
+       * @allow (create, get, list, update, delete) - The owner of the user profile can fully manage their own quizzes.
+       * @principle Path-based security. Access is inherited from the parent user document rule.
+       */
+      match /quizzes/{quizId} {
+        allow read, write: if isOwner();
       }
       
-      allow get: if isQuizOwner();
-      allow list: if request.auth != null && request.query.get("userId") == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if false; // Quizzes are immutable
-    }
-
-    /**
-     * @description Controls access to study plans for a specific user.
-     * @path /users/{userId}/studyPlans/{studyPlanId}
-     * @allow (create) - User with UID 'user_abc' can create a study plan under their profile.
-     * @allow (get, list) - User with UID 'user_abc' can read study plans under their profile.
-     * @allow (update, delete) - User with UID 'user_abc' can update/delete study plans under their profile.
-     * @deny (create) - User with UID 'user_xyz' cannot create a study plan under user 'user_abc'.
-     * @deny (get, list) - User with UID 'user_xyz' cannot read study plans under user 'user_abc'.
-     * @deny (update, delete) - User with UID 'user_xyz' cannot update/delete study plans under user 'user_abc'.
-     * @principle Enforces document ownership; only the owning user can manage their study plans.
-     */
-    match /users/{userId}/studyPlans/{studyPlanId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
+      /**
+       * @description Controls access to study plans for a specific user.
+       * @path /users/{userId}/studyPlans/{studyPlanId}
+       * @allow (create, get, list, update, delete) - The owner of the user profile can fully manage their own study plans.
+       * @principle Path-based security.
+       */
+      match /studyPlans/{studyPlanId} {
+        allow read, write: if isOwner();
       }
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isOwner(userId) && resource.data.userId == userId && resource != null; // Enforce immutability of userId & existence check.
-      allow delete: if isOwner(userId) && resource != null; // Check for existence before deleting.
-    }
-    
-    /**
-     * @description Controls access to content summaries for a specific user.
-     * @path /users/{userId}/summaries/{summaryId}
-     * @allow (create, get, list, update, delete) - User with UID 'user_abc' can manage summaries under their own profile.
-     * @deny (create, get, list, update, delete) - User with UID 'user_xyz' cannot manage summaries under user 'user_abc'.
-     * @principle Enforces document ownership for all content summary operations.
-     */
-    match /users/{userId}/summaries/{summaryId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
+      
+      /**
+       * @description Controls access to content summaries for a specific user.
+       * @path /users/{userId}/summaries/{summaryId}
+       * @allow (create, get, list, update, delete) - The owner of the user profile can fully manage their own summaries.
+       * @principle Path-based security.
+       */
+      match /summaries/{summaryId} {
+        allow read, write: if isOwner();
       }
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isOwner(userId) && resource.data.userId == userId && resource != null;
-      allow delete: if isOwner(userId) && resource != null;
+      
+      /**
+       * @description Controls access to quiz attempts for a specific user.
+       * @path /users/{userId}/quizAttempts/{quizAttemptId}
+       * @allow (create, get, list, update, delete) - The owner of the user profile can fully manage their own quiz attempts.
+       * @principle Path-based security.
+       */
+      match /quizAttempts/{quizAttemptId} {
+        allow read, write: if isOwner();
+      }
     }
 
     /**
      * @description Controls access to learning materials.
      * @path /learningMaterials/{learningMaterialId}
      * @allow (get, list) - Any user can read learning materials.
-     * @allow (create) - User with UID 'user_abc' can create a learning material with 'creatorId' field set to 'user_abc'.
-     * @allow (update, delete) - User with UID 'user_abc' can update/delete a learning material where resource.data.creatorId == 'user_abc'.
-     * @deny (create) - User with UID 'user_xyz' cannot create a learning material with 'creatorId' field set to 'user_abc'.
-     * @deny (update, delete) - User with UID 'user_xyz' cannot update/delete a learning material where resource.data.creatorId == 'user_abc'.
+     * @allow (create, update, delete) - Only the creator can manage the material.
      * @principle Allows public read access but restricts write access to the owner (creator).
      */
     match /learningMaterials/{learningMaterialId} {
-      allow get: if true;
-      allow list: if true;
-
-      allow create: if request.auth != null && request.resource.data.keys().hasAll(['creatorId']) && request.resource.data.creatorId == request.auth.uid;
-      allow update: if request.auth != null && resource.data.creatorId == request.auth.uid && resource != null;
-      allow delete: if request.auth != null && resource.data.creatorId == request.auth.uid && resource != null;
-    }
-    
-    /**
-     * @description Controls access to quiz attempts for a specific user.
-     * @path /users/{userId}/quizAttempts/{quizAttemptId}
-     * @allow (create) - User with UID 'user_abc' can create a quiz attempt under their profile.  The 'userId' field in the attempt must match {userId}.
-     * @allow (get, list) - User with UID 'user_abc' can read their quiz attempts.
-     * @allow (update, delete) - User with UID 'user_abc' can update/delete their quiz attempts.
-     * @deny (create) - User with UID 'user_xyz' cannot create a quiz attempt under user 'user_abc'.
-     * @deny (get, list) - User with UID 'user_xyz' cannot read quiz attempts under user 'user_abc'.
-     * @deny (update, delete) - User with UID 'user_xyz' cannot update/delete quiz attempts under user 'user_abc'.
-     * @principle Enforces document ownership; only the owning user can manage their quiz attempts.
-     */
-    match /users/{userId}/quizAttempts/{quizAttemptId} {
-       function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
+      function isCreator() {
+        return request.auth != null && resource.data.creatorId == request.auth.uid;
       }
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isOwner(userId) && resource.data.userId == userId && resource != null; // Enforce immutability of userId & existence check.
-      allow delete: if isOwner(userId) && resource != null; // Check for existence before deleting.
+      allow read: if true;
+
+      allow create: if request.auth != null && request.resource.data.creatorId == request.auth.uid;
+      allow update, delete: if isCreator();
     }
   }
 }

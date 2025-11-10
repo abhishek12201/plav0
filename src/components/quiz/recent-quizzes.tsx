@@ -2,7 +2,7 @@
 'use client';
 
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Loader2, Book, ArrowRight } from 'lucide-react';
@@ -28,9 +28,9 @@ export default function RecentQuizzes({ onStartQuiz }: RecentQuizzesProps) {
 
     const quizzesQuery = useMemoFirebase(() => {
         if (!user) return null;
+        // Query the subcollection under the specific user
         return query(
-            collection(firestore, 'quizzes'),
-            where('userId', '==', user.uid),
+            collection(firestore, 'users', user.uid, 'quizzes'),
             orderBy('createdAt', 'desc'),
             limit(10)
         );
@@ -83,4 +83,3 @@ export default function RecentQuizzes({ onStartQuiz }: RecentQuizzesProps) {
         </Card>
     );
 }
-

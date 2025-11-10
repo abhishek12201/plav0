@@ -52,10 +52,10 @@ export async function generatePersonalizedQuiz(
   try {
     const result = await generateQuiz(input);
     
-    // Save the generated quiz to Firestore
+    // Save the generated quiz to Firestore under the user's subcollection
     if (result && 'questions' in result && result.questions) {
         const { firestore } = getSdks();
-        const quizzesCol = collection(firestore, "quizzes");
+        const quizzesCol = collection(firestore, "users", input.userId, "quizzes");
         const newQuizRef = await addDoc(quizzesCol, {
           userId: input.userId,
           topic: input.topic,
