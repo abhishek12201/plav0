@@ -45,6 +45,11 @@ type Answers = { [key: number]: Answer };
 type Flagged = { [key: number]: boolean };
 type FeedbackTone = "Encouraging" | "Constructive" | "Gamified";
 
+type QuizViewProps = {
+  quizData: QuizData;
+  onRetake: () => void;
+};
+
 
 export default function QuizView({ quizData, onRetake }: QuizViewProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -69,7 +74,7 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
         userAnswer: currentAnswers[i]?.answer || "Not answered",
       }));
 
-      const feedbackResult = await provideFeedback({
+      const feedbackResult = await provideAdaptiveFeedback({
         quizTitle: quizData.title,
         questions: questionsWithUserAnswers,
         score: currentScore,
@@ -348,11 +353,9 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
                     onValueChange={setConfidence}
                 />
                 <div className='flex items-center gap-1'>
-                  <Star className='h-5 w-5 text-primary fill-primary'/>
-                  <Star className='h-5 w-5 text-primary fill-primary'/>
-                  <Star className='h-5 w-5 text-primary fill-primary'/>
-                  <Star className='h-5 w-5 text-primary fill-primary'/>
-                  <Star className='h-5 w-5 text-primary fill-primary'/>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className='h-5 w-5 text-primary fill-primary'/>
+                  ))}
                 </div>
               </div>
           </div>
