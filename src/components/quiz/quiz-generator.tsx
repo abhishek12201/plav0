@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { QuizData } from './quiz-view';
 import { Input } from '../ui/input';
 import { Slider } from '../ui/slider';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 
 type QuizGeneratorProps = {
   onQuizGenerated: (data: QuizData) => void;
@@ -17,6 +18,7 @@ type QuizGeneratorProps = {
 export default function QuizGenerator({ onQuizGenerated }: QuizGeneratorProps) {
   const [isPending, startTransition] = useTransition();
   const [numQuestions, setNumQuestions] = React.useState([5]);
+  const [difficulty, setDifficulty] = React.useState("easy");
   const { toast } = useToast();
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -39,6 +41,7 @@ export default function QuizGenerator({ onQuizGenerated }: QuizGeneratorProps) {
         learningContent,
         topic,
         numberOfQuestions: numQuestions[0],
+        difficulty: difficulty,
       });
 
       if (result && 'questions' in result && result.questions) {
@@ -90,6 +93,48 @@ export default function QuizGenerator({ onQuizGenerated }: QuizGeneratorProps) {
             value={numQuestions}
             onValueChange={setNumQuestions}
           />
+        </div>
+        <div className="space-y-3">
+          <Label>Difficulty</Label>
+          <RadioGroup
+            value={difficulty}
+            onValueChange={setDifficulty}
+            className="grid grid-cols-3 gap-4"
+          >
+            <div>
+              <RadioGroupItem value="easy" id="easy" className="sr-only" />
+              <Label
+                htmlFor="easy"
+                className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground ${
+                  difficulty === 'easy' ? 'border-primary' : ''
+                }`}
+              >
+                Easy
+              </Label>
+            </div>
+            <div>
+              <RadioGroupItem value="medium" id="medium" className="sr-only" />
+              <Label
+                htmlFor="medium"
+                className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground ${
+                  difficulty === 'medium' ? 'border-primary' : ''
+                }`}
+              >
+                Medium
+              </Label>
+            </div>
+            <div>
+              <RadioGroupItem value="hard" id="hard" className="sr-only" />
+              <Label
+                htmlFor="hard"
+                className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground ${
+                  difficulty === 'hard' ? 'border-primary' : ''
+                }`}
+              >
+                Hard
+              </Label>
+            </div>
+          </RadioGroup>
         </div>
         <Button type="submit" disabled={isPending} className="w-full !mt-8" size="lg">
           {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
