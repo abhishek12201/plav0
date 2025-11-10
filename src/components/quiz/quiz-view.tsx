@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState, useTransition } from 'react';
 import { Button } from "@/components/ui/button";
@@ -5,11 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { provideAdaptiveFeedback, type ProvideAdaptiveFeedbackOutput } from '@/lib/actions';
+import { provideAdaptiveFeedback, type ProvideAdaptiveFeedbackOutput, saveQuizAttempt } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, RefreshCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
+import { useUser } from '@/firebase';
 
 type Question = {
   question: string;
@@ -20,6 +22,7 @@ type Question = {
 export type QuizData = {
   title: string;
   questions: Question[];
+  quizId: string;
 };
 
 type QuizViewProps = {
@@ -37,6 +40,7 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
   const [feedback, setFeedback] = useState<ProvideAdaptiveFeedbackOutput | null>(null);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const { user } = useUser();
   
   const handleAnswerChange = (value: string) => {
     setAnswers({ ...answers, [currentQuestionIndex]: value });
@@ -51,6 +55,16 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
   };
 
   const handleSubmit = () => {
+    if (!user) {
+      toast({
+        title: "Not Logged In",
+        description: "You must be logged in to save your quiz results.",
+        variant: "destructive",
+      });
+      setIsFinished(true); // Still show results, just don't save
+      return;
+    }
+
     let newScore = 0;
     quizData.questions.forEach((q, index) => {
       if (answers[index] === q.correctAnswer) {
@@ -59,27 +73,46 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
     });
     setScore(newScore);
     setIsFinished(true);
-    generateFeedback(newScore);
-  };
 
-  const generateFeedback = (finalScore: number) => {
     startTransition(async () => {
+      // Save the attempt
+      const attemptResult = await saveQuizAttempt({
+        userId: user.uid,
+        quizId: quizData.quizId,
+        answers: answers,
+        score: newScore,
+      });
+
+      if (!attemptResult.success) {
+        toast({
+          title: "Save Error",
+          description: attemptResult.error,
+          variant: "destructive",
+        });
+      } else {
+         toast({
+          title: "Quiz Finished!",
+          description: "Your results have been saved.",
+        });
+      }
+
+      // Generate feedback
       const questionsWithUserAnswers = quizData.questions.map((q, i) => ({
         ...q,
         userAnswer: answers[i] || "Not answered",
       }));
 
-      const result = await provideAdaptiveFeedback({
+      const feedbackResult = await provideAdaptiveFeedback({
         quizTitle: quizData.title,
         questions: questionsWithUserAnswers,
-        score: finalScore,
-        studentKnowledgeLevel: 'intermediate', // This could be dynamic in a real app
+        score: newScore,
+        studentKnowledgeLevel: 'intermediate',
       });
 
-      if (result && result.overallFeedback) {
-        setFeedback(result);
+      if (feedbackResult && feedbackResult.overallFeedback) {
+        setFeedback(feedbackResult);
       } else {
-        const error = (result as { error: string })?.error || "Could not generate adaptive feedback.";
+        const error = (feedbackResult as { error: string })?.error || "Could not generate adaptive feedback.";
         toast({
           title: "Feedback Error",
           description: error,
@@ -133,7 +166,7 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
                 )}
                </div>
             ) : !isPending && (
-              <p className="text-muted-foreground text-center py-8">Generating your personalized feedback...</p>
+              <p className="text-muted-foreground text-center py-8">Saving results and generating your personalized feedback...</p>
             )}
           </CardContent>
         </Card>

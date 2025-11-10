@@ -28,6 +28,12 @@ import {
 import { getSdks } from "@/firebase";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 
+export type UserQuizAttempt = {
+  quizId: string;
+  userId: string;
+  answers: { [key: number]: string };
+  score: number;
+};
 
 export async function createPersonalizedStudyPlan(
   input: CreatePersonalizedStudyPlanInput
@@ -42,7 +48,7 @@ export async function createPersonalizedStudyPlan(
 
 export async function generatePersonalizedQuiz(
   input: GeneratePersonalizedQuizInput & { userId: string }
-): Promise<GeneratePersonalizedQuizOutput | { error: string }> {
+): Promise<(GeneratePersonalizedQuizOutput & { quizId: string }) | { error: string }> {
   try {
     const result = await generateQuiz(input);
     
@@ -50,7 +56,7 @@ export async function generatePersonalizedQuiz(
     if (result && 'questions' in result && result.questions) {
         const { firestore } = getSdks();
         const quizzesCol = collection(firestore, "quizzes");
-        await addDoc(quizzesCol, {
+        const newQuizRef = await addDoc(quizzesCol, {
           userId: input.userId,
           topic: input.topic,
           difficulty: input.difficulty,
@@ -58,9 +64,10 @@ export async function generatePersonalizedQuiz(
           questions: result.questions,
           createdAt: serverTimestamp(),
         });
+        return { ...result, quizId: newQuizRef.id };
     }
     
-    return result;
+    return result as { error: string };
   } catch (error) {
     console.error("Error generating quiz:", error);
     return { error: "Sorry, I couldn't generate a quiz at the moment. Please try again later." };
@@ -108,6 +115,24 @@ export async function retrieveContent(
   } catch (error) {
     console.error("Error retrieving content:", error);
     return { error: "Sorry, I couldn't retrieve content at the moment. Please try again later." };
+  }
+}
+
+export async function saveQuizAttempt(
+  input: UserQuizAttempt
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { firestore } = getSdks();
+    const attemptsCol = collection(firestore, "users", input.userId, "quizAttempts");
+    await addDoc(attemptsCol, {
+      ...input,
+      attemptTime: serverTimestamp(),
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Error saving quiz attempt:", error);
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+    return { success: false, error: "Sorry, I couldn't save your quiz attempt. " + errorMessage };
   }
 }
 

@@ -58,10 +58,11 @@ export default function QuizGenerator({ onQuizGenerated }: QuizGeneratorProps) {
         userId: user.uid,
       });
 
-      if (result && 'questions' in result && result.questions) {
+      if (result && 'questions' in result && result.questions && 'quizId' in result) {
         onQuizGenerated({
           title: result.title,
           questions: result.questions,
+          quizId: result.quizId,
         });
         toast({
           title: "Quiz Generated!",
