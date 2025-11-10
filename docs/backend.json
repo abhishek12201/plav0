@@ -1,0 +1,313 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the Personalized Learning Nexus platform.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user.",
+          "format": "uuid"
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user.",
+          "format": "email"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User's display name."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "URL of the user's profile photo.",
+          "format": "uri"
+        },
+        "creationTime": {
+          "type": "string",
+          "description": "The date and time the user was created.",
+          "format": "date-time"
+        },
+        "lastSignInTime": {
+          "type": "string",
+          "description": "The date and time the user last signed in.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "displayName",
+        "creationTime"
+      ]
+    },
+    "LearningMaterial": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "LearningMaterial",
+      "type": "object",
+      "description": "Represents a piece of learning material (e.g., a document, video, or article).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the learning material.",
+          "format": "uuid"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the learning material."
+        },
+        "contentType": {
+          "type": "string",
+          "description": "Type of content (e.g., 'article', 'video', 'pdf')."
+        },
+        "contentUrl": {
+          "type": "string",
+          "description": "URL where the learning material can be accessed.",
+          "format": "uri"
+        },
+        "summary": {
+          "type": "string",
+          "description": "A summarized version of the content."
+        },
+        "keywords": {
+          "type": "array",
+          "description": "Keywords associated with the learning material.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "contentType",
+        "contentUrl"
+      ]
+    },
+    "Quiz": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Quiz",
+      "type": "object",
+      "description": "Represents a quiz generated based on learning materials.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the quiz.",
+          "format": "uuid"
+        },
+        "learningMaterialId": {
+          "type": "string",
+          "description": "Reference to LearningMaterial. (Relationship: LearningMaterial 1:N Quiz)"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the quiz."
+        },
+        "questions": {
+          "type": "array",
+          "description": "Array of questions in the quiz. Each question is a string.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "learningMaterialId",
+        "title",
+        "questions"
+      ]
+    },
+    "StudyPlan": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "StudyPlan",
+      "type": "object",
+      "description": "Represents a personalized study plan for a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the study plan.",
+          "format": "uuid"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N StudyPlan)"
+        },
+        "learningMaterialIds": {
+          "type": "array",
+          "description": "References to LearningMaterials. (Relationship: StudyPlan N:N LearningMaterial)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "startDate": {
+          "type": "string",
+          "description": "Start date of the study plan.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "End date of the study plan.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "learningMaterialIds",
+        "startDate",
+        "endDate"
+      ]
+    },
+    "UserQuizAttempt": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserQuizAttempt",
+      "type": "object",
+      "description": "Represents a user's attempt at a quiz.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user quiz attempt.",
+          "format": "uuid"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N UserQuizAttempt)"
+        },
+        "quizId": {
+          "type": "string",
+          "description": "Reference to Quiz. (Relationship: Quiz 1:N UserQuizAttempt)"
+        },
+        "attemptTime": {
+          "type": "string",
+          "description": "Date and time of the quiz attempt.",
+          "format": "date-time"
+        },
+        "answers": {
+          "type": "array",
+          "description": "Array of user's answers to the quiz questions.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "score": {
+          "type": "number",
+          "description": "The score achieved in the quiz attempt."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "quizId",
+        "attemptTime",
+        "answers",
+        "score"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles.  Authorization is based on matching {userId} with request.auth.uid.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/studyPlans/{studyPlanId}",
+        "definition": {
+          "entityName": "StudyPlan",
+          "schema": {
+            "$ref": "#/backend/entities/StudyPlan"
+          },
+          "description": "Stores study plans for each user. Authorization is based on {userId} matching request.auth.uid.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "studyPlanId",
+              "description": "The unique identifier of the study plan."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/learningMaterials/{learningMaterialId}",
+        "definition": {
+          "entityName": "LearningMaterial",
+          "schema": {
+            "$ref": "#/backend/entities/LearningMaterial"
+          },
+          "description": "Stores learning materials.  This collection requires more complex access control rules, potentially involving a 'creatorId' field or a separate access control list if restricted access is needed.",
+          "params": [
+            {
+              "name": "learningMaterialId",
+              "description": "The unique identifier of the learning material."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/learningMaterials/{learningMaterialId}/quizzes/{quizId}",
+        "definition": {
+          "entityName": "Quiz",
+          "schema": {
+            "$ref": "#/backend/entities/Quiz"
+          },
+          "description": "Stores quizzes associated with each learning material. The 'learningMaterialId' is present in quiz object. This enables simpler authorization rules because the Quiz is owned by a LearningMaterial.",
+          "params": [
+            {
+              "name": "learningMaterialId",
+              "description": "The unique identifier of the learning material."
+            },
+            {
+              "name": "quizId",
+              "description": "The unique identifier of the quiz."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/quizAttempts/{quizAttemptId}",
+        "definition": {
+          "entityName": "UserQuizAttempt",
+          "schema": {
+            "$ref": "#/backend/entities/UserQuizAttempt"
+          },
+          "description": "Stores quiz attempts for each user.  Authorization is based on {userId} matching request.auth.uid.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "quizAttemptId",
+              "description": "The unique identifier of the quiz attempt."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support the Personalized Learning Nexus application, emphasizing authorization independence, clarity, and scalability. It leverages denormalization to avoid complex `get()` calls in security rules and ensures efficient data retrieval. The structure is organized around user-owned data and collaborative data, with clear ownership and membership models. Path-based ownership is favored where appropriate. Collections are designed to maintain a homogeneous security posture. All `list` operations will perform securely due to our segregation and membership models.\n\n*   `/users/{userId}`: Stores user profiles. This path allows for straightforward user authentication rules based on `request.auth.uid`.\n*   `/users/{userId}/studyPlans/{studyPlanId}`: Study plans are stored as subcollections of users. This allows simple security rules based on path and `request.auth.uid`.\n*   `/learningMaterials/{learningMaterialId}`: Learning materials are stored in a top-level collection. Access controls will need to be more complex, if access is restricted.\n*   `/learningMaterials/{learningMaterialId}/quizzes/{quizId}`: Quizzes are stored as subcollections of learning materials, this allows simple security rules.\n*   `/users/{userId}/quizAttempts/{quizAttemptId}`: Quiz attempts are stored as subcollections of users. This structure enables simple security rules based on path ownership. \n\nThis structure ensures authorization independence by avoiding hierarchical dependencies, simplifies security rules by segregating data with different access requirements, and enhances debuggability by making authorization intent explicit."
+  }
+}
