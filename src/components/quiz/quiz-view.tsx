@@ -39,7 +39,7 @@ export type QuizData = {
 
 type Answer = {
   answer: string;
-  confidence: number;
+  confidence?: number;
 }
 type Answers = { [key: number]: Answer };
 type Flagged = { [key: number]: boolean };
@@ -62,6 +62,7 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
   const [feedbackTone, setFeedbackTone] = useState<FeedbackTone>("Encouraging");
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [confidence, setConfidence] = useState([3]);
+  const [confidenceTouched, setConfidenceTouched] = useState(false);
 
   const { toast } = useToast();
   const { user } = useUser();
@@ -107,24 +108,34 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
     setAnswers(prev => ({
       ...prev,
       [currentQuestionIndex]: {
+        ...prev[currentQuestionIndex],
         answer: value,
-        confidence: confidence[0],
       }
     }));
   };
+  
+  const handleConfidenceChange = (value: number[]) => {
+    setConfidence(value);
+    setConfidenceTouched(true);
+  };
+
 
   const handleNext = () => {
-    // Save confidence score for the current question
-    setAnswers(prev => ({
-      ...prev,
-      [currentQuestionIndex]: {
-        answer: prev[currentQuestionIndex]?.answer || '',
-        confidence: confidence[0],
-      }
-    }));
+    // Save confidence score for the current question IF it was touched
+    if (confidenceTouched) {
+      setAnswers(prev => ({
+        ...prev,
+        [currentQuestionIndex]: {
+          ...prev[currentQuestionIndex],
+          confidence: confidence[0],
+        }
+      }));
+    }
 
-    // Reset confidence slider for next question
+
+    // Reset confidence slider and touched state for next question
     setConfidence([3]);
+    setConfidenceTouched(false);
 
     if (currentQuestionIndex < quizData.questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
@@ -335,7 +346,7 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
                     max={5}
                     step={1}
                     value={confidence}
-                    onValueChange={setConfidence}
+                    onValueChange={handleConfidenceChange}
                 />
                 <div className='flex items-center gap-1'>
                   {Array.from({ length: 5 }).map((_, i) => (
@@ -353,3 +364,5 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
     </div>
   );
 }
+
+    
