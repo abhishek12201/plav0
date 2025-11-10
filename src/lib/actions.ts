@@ -25,8 +25,8 @@ import {
   type RetrieveContentInput,
   type RetrieveContentOutput,
 } from "@/ai/flows/retrieve-content";
-import { getSdks } from "@/firebase/server-actions";
-import { addDoc, collection, doc, serverTimestamp, setDoc, Timestamp } from "firebase/firestore";
+// Server-side Firestore SDK should not be used in actions called from client without auth context.
+// Client-side SDK will be used in the components instead.
 
 type Answer = {
   answer: string;
@@ -65,7 +65,6 @@ export async function generatePersonalizedQuiz(
         return result;
     }
     
-    // If result is not valid, treat as an error.
     const errorMessage = (result as { error: string })?.error || "The AI failed to generate a valid quiz structure.";
     return { error: errorMessage };
 
@@ -110,37 +109,7 @@ export async function retrieveContent(
   }
 }
 
-export async function saveQuizAttempt(
-  input: UserQuizAttempt
-): Promise<{ success: boolean; attemptId?: string; error?: string }> {
-  try {
-    const { firestore } = getSdks();
-    const attemptsCol = collection(firestore, "users", input.userId, "quizAttempts");
-    
-    if (input.attemptId && input.feedback) {
-      // This is an update to add feedback to an existing attempt
-      const attemptRef = doc(attemptsCol, input.attemptId);
-      await setDoc(attemptRef, { feedback: input.feedback }, { merge: true });
-      return { success: true, attemptId: input.attemptId };
-    } else {
-      // This is a new attempt to be created
-      const newAttemptRef = await addDoc(attemptsCol, {
-        quizId: input.quizId,
-        userId: input.userId,
-        answers: input.answers,
-        score: input.score,
-        topic: input.topic,
-        totalQuestions: input.totalQuestions,
-        attemptTime: serverTimestamp(),
-      });
-      return { success: true, attemptId: newAttemptRef.id };
-    }
-  } catch (error) {
-    console.error("Error saving quiz attempt:", error);
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-    return { success: false, error: "Sorry, I couldn't save your quiz attempt. " + errorMessage };
-  }
-}
-
 
 export type { ProvideAdaptiveFeedbackOutput };
+
+    

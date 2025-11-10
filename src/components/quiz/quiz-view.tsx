@@ -6,22 +6,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { provideAdaptiveFeedback, type ProvideAdaptiveFeedbackOutput, saveQuizAttempt } from '@/lib/actions';
+import { provideAdaptiveFeedback, type ProvideAdaptiveFeedbackOutput } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, RefreshCcw, Flag, BrainCircuit, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
-import { useUser } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Badge } from '../ui/badge';
 import { Slider } from '../ui/slider';
+import { collection, addDoc, doc, setDoc, Timestamp } from 'firebase/firestore';
 
 type Question = {
   question: string;
@@ -66,8 +66,9 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
 
   const { toast } = useToast();
   const { user } = useUser();
+  const firestore = useFirestore();
 
-  const getFeedback = useCallback((currentScore: number, currentAnswers: Answers, tone: FeedbackTone) => {
+  const getFeedback = useCallback((currentScore: number, currentAnswers: Answers, tone: FeedbackTone, attemptDocId: string) => {
     setFeedback(null);
     startTransition(async () => {
       const questionsWithUserAnswers = quizData.questions.map((q, i) => ({
@@ -85,13 +86,18 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
 
       if (feedbackResult && 'overallFeedback' in feedbackResult) {
         setFeedback(feedbackResult);
-        // Now save the feedback to the attempt
-        if (user && attemptId) {
-          saveQuizAttempt({
-            attemptId,
-            userId: user.uid,
-            feedback: feedbackResult,
-          });
+        // Now save the feedback to the attempt on the client
+        if (user && attemptDocId) {
+          try {
+            const attemptRef = doc(firestore, "users", user.uid, "quizAttempts", attemptDocId);
+            await setDoc(attemptRef, { feedback: feedbackResult }, { merge: true });
+          } catch(error: any) {
+             toast({
+              title: "Feedback Save Error",
+              description: error.message || "Could not save AI feedback.",
+              variant: "destructive",
+            });
+          }
         }
       } else {
         const error = (feedbackResult as { error: string })?.error || "Could not generate adaptive feedback.";
@@ -102,7 +108,7 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
         });
       }
     });
-  }, [quizData, toast, user, attemptId]);
+  }, [quizData, toast, user, firestore]);
   
   const handleAnswerChange = (value: string) => {
     setAnswers(prev => ({
@@ -160,32 +166,44 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
     setScore(finalScore);
     setIsFinished(true);
 
-    if (user && quizData.topic) {
-      const result = await saveQuizAttempt({
-        userId: user.uid,
-        quizId: quizData.quizId,
-        answers: answers,
-        score: finalScore,
-        topic: quizData.topic,
-        totalQuestions: quizData.questions.length,
-      });
-      
-      if (result.success && result.attemptId) {
-        setAttemptId(result.attemptId);
-        toast({
-          title: "Quiz Finished!",
-          description: "Your results have been saved.",
-        });
-        getFeedback(finalScore, answers, feedbackTone);
-      } else {
-         toast({
-          title: "Save Error",
-          description: result.error,
+    if (!user || !quizData.topic || !firestore) {
+      toast({
+          title: "Error",
+          description: "Cannot save result: User not logged in or missing data.",
           variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const attemptsCol = collection(firestore, "users", user.uid, "quizAttempts");
+      const newAttemptData = {
+          quizId: quizData.quizId,
+          userId: user.uid,
+          answers: answers,
+          score: finalScore,
+          topic: quizData.topic,
+          totalQuestions: quizData.questions.length,
+          attemptTime: Timestamp.now(),
+      };
+      const newAttemptRef = await addDoc(attemptsCol, newAttemptData);
+      const newAttemptId = newAttemptRef.id;
+      
+      setAttemptId(newAttemptId);
+      toast({
+        title: "Quiz Finished!",
+        description: "Your results have been saved.",
+      });
+
+      // Now that the attempt is saved and we have an ID, get the feedback
+      getFeedback(finalScore, answers, feedbackTone, newAttemptId);
+    
+    } catch(error: any) {
+        toast({
+            title: "Save Error",
+            description: error.message || "Sorry, I couldn't save your quiz attempt.",
+            variant: "destructive",
         });
-      }
-    } else {
-      getFeedback(finalScore, answers, feedbackTone);
     }
   };
 
@@ -210,8 +228,10 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
                <div className="flex items-center gap-2">
                 <Label htmlFor="feedback-tone">Tone</Label>
                 <Select value={feedbackTone} onValueChange={(value: FeedbackTone) => {
-                  setFeedbackTone(value);
-                  getFeedback(score, answers, value);
+                  if (attemptId) {
+                    setFeedbackTone(value);
+                    getFeedback(score, answers, value, attemptId);
+                  }
                 }}>
                   <SelectTrigger className="w-[140px]" id="feedback-tone">
                     <SelectValue placeholder="Select tone" />
@@ -374,3 +394,5 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
     </div>
   );
 }
+
+    
