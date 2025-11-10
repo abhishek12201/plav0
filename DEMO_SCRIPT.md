@@ -20,21 +20,18 @@
 
 ---
 
-### **Part 2: The Agent Team-Up in Action (3 minutes)**
+### **Part 2: Content & Quizzes (3 minutes)**
 
-**(2.1) The Orchestrator:**
-*   "Now, let's see the agents work together. We'll head to the **Study Hub** and use the **Agent Team-Up** feature."
-*   **Action:** Navigate to Study Hub -> Agent Team-Up tab.
-*   "I want to learn about **'Neural Networks'**. I'll give this topic to our agent team and let them handle the rest."
+**(2.1) The Content Retriever & Quiz Generator:**
+*   "Let's head to the **Quiz Center**. I want to learn about **'Neural Networks'**."
+*   **Action:** Navigate to the Quiz Center.
+*   "First, I need some learning material. I'll paste an article I found into the 'Learning Content' box. I'll also specify the topic."
+*   **Action:** Paste pre-written content about Neural Networks into the text area. Set the topic to "Neural Networks".
+*   "Now, our **Quiz Generator Agent** will get to work. It reads the content and creates a personalized quiz to test my understanding."
+*   **Action:** Click "Generate Quiz".
 
-**(2.2) Meet the Agents:**
-*   **Action:** Type "Introduction to Neural Networks" into the input field and click "Start Agent Team."
-*   **Narrate the live feed as it happens:**
-    1.  "First up is the **Content Retriever Agent**. Its job is to search its vast knowledge base to find and synthesize the most relevant information on our topic." (Wait for the retriever's "done" message).
-    2.  "Next, the orchestrator passes this content to our **Quiz Generator Agent**. This agent's specialty is creating high-quality, personalized quizzes to test your understanding." (Wait for the quiz generator's final message).
-
-**(2.3) Take the Quiz:**
-*   "And there we have it. In seconds, our agent team has researched a topic and built a custom quiz. Let's see how I do."
+**(2.2) Take the Quiz:**
+*   "And there we have it. In seconds, our agent has built a custom quiz. Let's see how I do."
 *   **Action:** Answer the first few questions. Get one or two wrong on purpose to showcase the feedback capabilities later. Use the "Flag for review" button on one question.
 *   "The interface is clean and distraction-free, letting me focus on the task at hand."
 *   **Action:** Click "Finish Quiz."
@@ -77,5 +74,5 @@
 *   "This isn't just data; it's a story of our growth."
 
 **(4.2) Conclusion:**
-*   "With a team of four specialized AI mentors—the Retriever, the Quizzer, the Evaluator, and the Mentor—the Personalized Learning Nexus transforms learning from a static process into a dynamic, responsive, and truly personal journey."
+*   "With a team of specialized AI mentors—the Retriever, the Quizzer, the Evaluator, and the Mentor—the Personalized Learning Nexus transforms learning from a static process into a dynamic, responsive, and truly personal journey."
 *   "Thank you."

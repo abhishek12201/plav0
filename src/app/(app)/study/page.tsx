@@ -1,9 +1,8 @@
 import StudyPlanGenerator from "@/components/study/study-plan-generator";
 import ContentSummarizer from "@/components/study/content-summarizer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpenText, FileText, Search, Zap } from "lucide-react";
+import { BookOpenText, FileText, Search } from "lucide-react";
 import ContentRetriever from "@/components/study/content-retriever";
-import OrchestrationView from "@/components/study/orchestration-view";
 
 export default function StudyPage() {
   return (
@@ -13,12 +12,8 @@ export default function StudyPage() {
         <p className="text-muted-foreground">Your personal AI-powered study tools.</p>
       </div>
 
-      <Tabs defaultValue="orchestrator" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 max-w-2xl">
-          <TabsTrigger value="orchestrator">
-            <Zap className="mr-2 h-4 w-4" />
-            Agent Team-Up
-          </TabsTrigger>
+      <Tabs defaultValue="study-plan" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 max-w-xl">
           <TabsTrigger value="study-plan">
             <BookOpenText className="mr-2 h-4 w-4" />
             Study Plan
@@ -32,9 +27,6 @@ export default function StudyPage() {
             Retriever
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="orchestrator" className="mt-4">
-          <OrchestrationView />
-        </TabsContent>
         <TabsContent value="study-plan" className="mt-4">
           <StudyPlanGenerator />
         </TabsContent>
