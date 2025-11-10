@@ -1,7 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpenText, Target, ClipboardCheck, BarChartHorizontalBig } from "lucide-react";
-import ProgressChart from "@/components/dashboard/progress-chart";
-import KnowledgeGapChart from "@/components/dashboard/knowledge-gap-chart";
 import RecentActivity from "@/components/dashboard/recent-activity";
 
 export default function DashboardPage() {
@@ -32,7 +31,7 @@ export default function DashboardPage() {
             <div className="text-2xl font-bold">88%</div>
             <p className="text-xs text-muted-foreground">+5% from last quiz</p>
           </CardContent>
-        </Card>
+        </card>
         <Card className="bg-card/80 backdrop-blur-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Quizzes Taken</CardTitle>
@@ -51,26 +50,6 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">14 Days</div>
             <p className="text-xs text-muted-foreground">Keep it going!</p>
-          </CardContent>
-        </Card>
-      </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 mt-6">
-        <Card className="col-span-1 lg:col-span-4 bg-card/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="font-headline">Progress Over Time</CardTitle>
-            <CardDescription>Your mastery score over the last 6 months.</CardDescription>
-          </CardHeader>
-          <CardContent className="pl-2">
-            <ProgressChart />
-          </CardContent>
-        </Card>
-        <Card className="col-span-1 lg:col-span-3 bg-card/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="font-headline">Knowledge Gaps</CardTitle>
-            <CardDescription>Areas where you can improve.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <KnowledgeGapChart />
           </CardContent>
         </Card>
       </div>

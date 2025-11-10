@@ -1,3 +1,4 @@
+
 "use client";
 import React from 'react';
 import Link from 'next/link';
@@ -27,6 +28,7 @@ import {
   Settings,
   User,
   Loader2,
+  BarChartBig,
 } from 'lucide-react';
 import { Logo } from './logo';
 import { useAuth, useUser } from '@/firebase';
@@ -36,6 +38,7 @@ const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/study', icon: BookOpenText, label: 'Study Hub' },
   { href: '/quiz', icon: ClipboardCheck, label: 'Quiz Center' },
+  { href: '/metrics', icon: BarChartBig, label: 'Metrics' },
 ];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
