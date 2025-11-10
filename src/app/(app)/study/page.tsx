@@ -5,8 +5,8 @@ import { BookOpenText, FileText } from "lucide-react";
 
 export default function StudyPage() {
   return (
-    <div className="flex flex-col gap-6">
-       <div>
+    <div className="max-w-7xl mx-auto w-full">
+       <div className="mb-6">
         <h1 className="text-3xl font-bold tracking-tight font-headline">Study Hub</h1>
         <p className="text-muted-foreground">Your personal AI-powered study tools.</p>
       </div>
