@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState, useTransition } from 'react';
+import React, { useState, useTransition, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { provideAdaptiveFeedback, type ProvideAdaptiveFeedbackOutput, saveQuizAttempt } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, RefreshCcw, Flag } from 'lucide-react';
+import { Loader2, Sparkles, RefreshCcw, Flag, BrainCircuit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { useUser } from '@/firebase';
@@ -19,6 +19,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Textarea } from '../ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Badge } from '../ui/badge';
 
 type Question = {
   question: string;
@@ -40,6 +42,8 @@ type QuizViewProps = {
 
 type Answers = { [key: number]: string };
 type Flagged = { [key: number]: boolean };
+type FeedbackTone = "Encouraging" | "Constructive" | "Gamified";
+
 
 export default function QuizView({ quizData, onRetake }: QuizViewProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -49,8 +53,38 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
   const [feedback, setFeedback] = useState<ProvideAdaptiveFeedbackOutput | null>(null);
   const [isPending, startTransition] = useTransition();
   const [flagged, setFlagged] = useState<Flagged>({});
+  const [feedbackTone, setFeedbackTone] = useState<FeedbackTone>("Encouraging");
   const { toast } = useToast();
   const { user } = useUser();
+
+  const getFeedback = useCallback((tone: FeedbackTone) => {
+    setFeedback(null);
+    startTransition(async () => {
+      const questionsWithUserAnswers = quizData.questions.map((q, i) => ({
+        ...q,
+        userAnswer: answers[i] || "Not answered",
+      }));
+
+      const feedbackResult = await provideAdaptiveFeedback({
+        quizTitle: quizData.title,
+        questions: questionsWithUserAnswers,
+        score: score,
+        studentKnowledgeLevel: 'intermediate',
+        feedbackTone: tone,
+      });
+
+      if (feedbackResult && feedbackResult.overallFeedback) {
+        setFeedback(feedbackResult);
+      } else {
+        const error = (feedbackResult as { error: string })?.error || "Could not generate adaptive feedback.";
+        toast({
+          title: "Feedback Error",
+          description: error,
+          variant: "destructive",
+        });
+      }
+    });
+  }, [quizData, answers, score, toast]);
   
   const handleAnswerChange = (value: string) => {
     setAnswers({ ...answers, [currentQuestionIndex]: value });
@@ -69,74 +103,42 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
   };
 
   const handleSubmit = () => {
-    if (!user) {
-      toast({
-        title: "Not Logged In",
-        description: "You must be logged in to save your quiz results.",
-        variant: "destructive",
-      });
-      setIsFinished(true); // Still show results, just don't save
-      return;
-    }
-
     let newScore = 0;
     quizData.questions.forEach((q, index) => {
-      // For short-answer, we can only check for exact match for now.
-      // A more advanced solution would use AI for grading.
-      if (answers[index]?.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()) {
+      if (q.type === 'multiple-choice' && answers[index] === q.correctAnswer) {
+        newScore++;
+      } else if (q.type === 'short-answer' && answers[index]?.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()) {
         newScore++;
       }
     });
     setScore(newScore);
     setIsFinished(true);
 
-    startTransition(async () => {
-      // Save the attempt
-      const attemptResult = await saveQuizAttempt({
+    if (user) {
+      saveQuizAttempt({
         userId: user.uid,
         quizId: quizData.quizId,
         answers: answers,
         score: newScore,
+      }).then(res => {
+        if (res.success) {
+          toast({
+            title: "Quiz Finished!",
+            description: "Your results have been saved.",
+          });
+        } else {
+           toast({
+            title: "Save Error",
+            description: res.error,
+            variant: "destructive",
+          });
+        }
       });
+    }
 
-      if (!attemptResult.success) {
-        toast({
-          title: "Save Error",
-          description: attemptResult.error,
-          variant: "destructive",
-        });
-      } else {
-         toast({
-          title: "Quiz Finished!",
-          description: "Your results have been saved.",
-        });
-      }
-
-      // Generate feedback
-      const questionsWithUserAnswers = quizData.questions.map((q, i) => ({
-        ...q,
-        userAnswer: answers[i] || "Not answered",
-      }));
-
-      const feedbackResult = await provideAdaptiveFeedback({
-        quizTitle: quizData.title,
-        questions: questionsWithUserAnswers,
-        score: newScore,
-        studentKnowledgeLevel: 'intermediate',
-      });
-
-      if (feedbackResult && feedbackResult.overallFeedback) {
-        setFeedback(feedbackResult);
-      } else {
-        const error = (feedbackResult as { error: string })?.error || "Could not generate adaptive feedback.";
-        toast({
-          title: "Feedback Error",
-          description: error,
-          variant: "destructive",
-        });
-      }
-    });
+    getFeedback(feedbackTone);
   };
+  
 
   if (isFinished) {
     return (
@@ -151,14 +153,46 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
         </div>
         <Card className="mb-4 bg-card/50">
           <CardHeader>
-            <CardTitle className="font-headline flex items-center gap-2"><Sparkles className="text-primary"/> Adaptive Feedback</CardTitle>
-            <CardDescription>AI-powered suggestions to help you improve.</CardDescription>
+            <div className='flex justify-between items-center'>
+              <div className='flex-1'>
+                <CardTitle className="font-headline flex items-center gap-2"><Sparkles className="text-primary"/> Adaptive Feedback</CardTitle>
+                <CardDescription>AI-powered suggestions to help you improve.</CardDescription>
+              </div>
+               <div className="flex items-center gap-2">
+                <Label htmlFor="feedback-tone">Tone</Label>
+                <Select value={feedbackTone} onValueChange={(value: FeedbackTone) => {
+                  setFeedbackTone(value);
+                  getFeedback(value);
+                }}>
+                  <SelectTrigger className="w-[140px]" id="feedback-tone">
+                    <SelectValue placeholder="Select tone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Encouraging">Encouraging</SelectItem>
+                    <SelectItem value="Constructive">Constructive</SelectItem>
+                    <SelectItem value="Gamified">Gamified</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            {isPending && <div className="flex justify-center items-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}
-            {feedback ? (
+            {(isPending || !feedback) && <div className="flex justify-center items-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}
+            {feedback && (
                <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
                 <p className="text-sm bg-secondary/30 p-4 rounded-md">{feedback.overallFeedback}</p>
+                
+                {feedback.weakConcepts && feedback.weakConcepts.length > 0 && (
+                  <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <h3 className="font-semibold flex items-center gap-2"><BrainCircuit className="h-5 w-5"/> Key Areas to Review</h3>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {feedback.weakConcepts.map((concept, i) => (
+                        <Badge key={i} variant="secondary" className="bg-amber-500/20 text-amber-900 dark:text-amber-100">{concept}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
                 {feedback.detailedFeedback.length > 0 && (
                   <Accordion type="single" collapsible className="w-full">
                     {feedback.detailedFeedback.map((item, index) => (
@@ -181,8 +215,6 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
                   </Accordion>
                 )}
                </div>
-            ) : !isPending && (
-              <p className="text-muted-foreground text-center py-8">Saving results and generating your personalized feedback...</p>
             )}
           </CardContent>
         </Card>

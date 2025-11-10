@@ -27,6 +27,7 @@ const ProvideAdaptiveFeedbackInputSchema = z.object({
   studentKnowledgeLevel: z
     .string()
     .describe('The current knowledge level of the student.'),
+  feedbackTone: z.enum(['Encouraging', 'Constructive', 'Gamified']).describe("The desired tone for the feedback."),
 });
 export type ProvideAdaptiveFeedbackInput = z.infer<
   typeof ProvideAdaptiveFeedbackInputSchema
@@ -54,6 +55,7 @@ const ProvideAdaptiveFeedbackOutputSchema = z.object({
     .describe(
       'An array of specific feedback for each question the user answered incorrectly.'
     ),
+  weakConcepts: z.array(z.string()).describe("A list of weak concepts or recurring themes identified from the user's incorrect answers."),
 });
 export type ProvideAdaptiveFeedbackOutput = z.infer<
   typeof ProvideAdaptiveFeedbackOutputSchema
@@ -71,6 +73,11 @@ const provideAdaptiveFeedbackPrompt = ai.definePrompt({
   output: {schema: ProvideAdaptiveFeedbackOutputSchema},
   prompt: `You are an AI mentor providing adaptive feedback to a student based on their quiz results.
 
+  Your response MUST be in the requested tone: {{{feedbackTone}}}
+  - 'Encouraging': Be positive, focus on progress, and gently guide them. Use phrases like "Great effort!" or "You're on the right track."
+  - 'Constructive': Be direct and analytical. Focus on the mistakes and provide clear, actionable steps for improvement.
+  - 'Gamified': Use game-like language. Refer to the score as "XP", weaknesses as "bosses to defeat", and learning as "leveling up".
+
   Quiz: {{{quizTitle}}}
   Score: {{{score}}} out of {{{questions.length}}}
   Student's Knowledge Level: {{{studentKnowledgeLevel}}}
@@ -81,10 +88,11 @@ const provideAdaptiveFeedbackPrompt = ai.definePrompt({
     Correct Answer: "{{this.correctAnswer}}"
   {{/each}}
 
-  Your task is to provide constructive, individualized, and encouraging feedback.
+  Your task is to provide constructive, individualized, and encouraging feedback in the specified tone.
 
-  1.  **Overall Feedback**: Start with a general summary of the student's performance. Be encouraging and positive, regardless of the score.
+  1.  **Overall Feedback**: Start with a general summary of the student's performance in the chosen tone.
   2.  **Detailed Feedback**: For EACH question the user answered incorrectly, provide a detailed explanation. Explain why their answer was incorrect and why the correct answer is right. Offer a clear, easy-to-understand concept review.
+  3.  **Weak Concepts**: Analyze the incorrect answers to identify 1-3 recurring themes, topics, or "weak concepts". List these concepts clearly. If there are no incorrect answers, this can be an empty array.
 
   Generate the structured feedback now.
   `,
