@@ -10,7 +10,12 @@ import { retrieveContent } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/firebase";
 
-export default function ContentRetriever() {
+type ContentRetrieverProps = {
+  onContentRetrieved?: (topic: string, summary: string) => void;
+  showSummary?: boolean;
+}
+
+export default function ContentRetriever({ onContentRetrieved, showSummary = true }: ContentRetrieverProps) {
   const [isPending, startTransition] = useTransition();
   const [summary, setSummary] = useState("");
   const { toast } = useToast();
@@ -45,10 +50,14 @@ export default function ContentRetriever() {
 
       if (result && result.summary) {
         setSummary(result.summary);
-        toast({
-          title: "Content Retrieved!",
-          description: "Your summary is ready and has been saved.",
-        });
+        if (onContentRetrieved) {
+          onContentRetrieved(topic, result.summary);
+        } else {
+          toast({
+            title: "Content Retrieved!",
+            description: "Your summary is ready and has been saved.",
+          });
+        }
       } else {
         toast({
           title: "Error",
@@ -60,7 +69,7 @@ export default function ContentRetriever() {
   };
 
   return (
-    <div className="grid md:grid-cols-2 gap-6">
+    <div className={`grid ${showSummary ? 'md:grid-cols-2' : 'grid-cols-1'} gap-6`}>
       <Card>
         <CardHeader>
           <CardTitle className="font-headline">Content Retriever Agent</CardTitle>
@@ -82,29 +91,31 @@ export default function ContentRetriever() {
           </div>
         </CardContent>
       </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-headline">Retrieved Summary</CardTitle>
-          <CardDescription>A concise summary of the topic you requested.</CardDescription>
-        </CardHeader>
-        <CardContent className="h-[450px]">
-          {isPending && (
-            <div className="flex items-center justify-center h-full">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          )}
-          {summary ? (
-             <div className="space-y-4 text-sm bg-secondary/30 p-4 rounded-md h-full overflow-y-auto">
-              <pre className="whitespace-pre-wrap font-body text-sm text-foreground">{summary}</pre>
-            </div>
-          ) : !isPending && (
-            <div className="text-center text-muted-foreground h-full flex flex-col items-center justify-center bg-secondary/20 rounded-md">
-              <Search className="h-12 w-12 mb-4 text-muted-foreground"/>
-              <p>Your retrieved content summary will appear here.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {showSummary && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-headline">Retrieved Summary</CardTitle>
+            <CardDescription>A concise summary of the topic you requested.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[450px]">
+            {isPending && (
+              <div className="flex items-center justify-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            )}
+            {summary ? (
+              <div className="space-y-4 text-sm bg-secondary/30 p-4 rounded-md h-full overflow-y-auto">
+                <pre className="whitespace-pre-wrap font-body text-sm text-foreground">{summary}</pre>
+              </div>
+            ) : !isPending && (
+              <div className="text-center text-muted-foreground h-full flex flex-col items-center justify-center bg-secondary/20 rounded-md">
+                <Search className="h-12 w-12 mb-4 text-muted-foreground"/>
+                <p>Your retrieved content summary will appear here.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
