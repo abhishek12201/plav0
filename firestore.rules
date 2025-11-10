@@ -43,7 +43,7 @@ service cloud.firestore {
       /**
        * @description Controls access to quizzes for a specific user.
        * @path /users/{userId}/quizzes/{quizId}
-       * @allow (create, get, list, update, delete) - The owner of the user profile can fully manage their own quizzes.
+       * @allow (read, write) - The owner of the user profile can fully manage their own quizzes.
        * @principle Path-based security. Access is inherited from the parent user document rule.
        */
       match /quizzes/{quizId} {
@@ -53,7 +53,7 @@ service cloud.firestore {
       /**
        * @description Controls access to study plans for a specific user.
        * @path /users/{userId}/studyPlans/{studyPlanId}
-       * @allow (create, get, list, update, delete) - The owner of the user profile can fully manage their own study plans.
+       * @allow (read, write) - The owner of the user profile can fully manage their own study plans.
        * @principle Path-based security.
        */
       match /studyPlans/{studyPlanId} {
@@ -63,7 +63,7 @@ service cloud.firestore {
       /**
        * @description Controls access to content summaries for a specific user.
        * @path /users/{userId}/summaries/{summaryId}
-       * @allow (create, get, list, update, delete) - The owner of the user profile can fully manage their own summaries.
+       * @allow (read, write) - The owner of the user profile can fully manage their own summaries.
        * @principle Path-based security.
        */
       match /summaries/{summaryId} {
@@ -73,7 +73,7 @@ service cloud.firestore {
       /**
        * @description Controls access to quiz attempts for a specific user.
        * @path /users/{userId}/quizAttempts/{quizAttemptId}
-       * @allow (create, get, list, update, delete) - The owner of the user profile can fully manage their own quiz attempts.
+       * @allow (read, write) - The owner of the user profile can fully manage their own quiz attempts.
        * @principle Path-based security.
        */
       match /quizAttempts/{quizAttemptId} {
