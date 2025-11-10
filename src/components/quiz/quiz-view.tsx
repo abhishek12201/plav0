@@ -33,6 +33,7 @@ export type QuizData = {
   title: string;
   questions: Question[];
   quizId: string;
+  topic?: string;
 };
 
 type QuizViewProps = {
@@ -111,15 +112,18 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
         newScore++;
       }
     });
-    setScore(newScore);
+    const finalScore = newScore;
+    setScore(finalScore);
     setIsFinished(true);
 
-    if (user) {
+    if (user && quizData.topic) {
       saveQuizAttempt({
         userId: user.uid,
         quizId: quizData.quizId,
         answers: answers,
-        score: newScore,
+        score: finalScore,
+        topic: quizData.topic,
+        totalQuestions: quizData.questions.length,
       }).then(res => {
         if (res.success) {
           toast({

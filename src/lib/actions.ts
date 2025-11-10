@@ -33,6 +33,8 @@ export type UserQuizAttempt = {
   userId: string;
   answers: { [key: number]: string };
   score: number;
+  topic: string;
+  totalQuestions: number;
 };
 
 export async function createPersonalizedStudyPlan(

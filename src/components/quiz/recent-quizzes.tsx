@@ -42,6 +42,7 @@ export default function RecentQuizzes({ onStartQuiz }: RecentQuizzesProps) {
         onStartQuiz({
             quizId: quiz.id,
             title: quiz.title,
+            topic: quiz.topic,
             questions: quiz.questions
         });
     }
