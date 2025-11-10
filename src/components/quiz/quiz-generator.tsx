@@ -89,7 +89,7 @@ export default function QuizGenerator({ onQuizGenerated }: QuizGeneratorProps) {
             max={10}
             step={1}
             value={numQuestions}
-            onValuegaValueChange={setNumQuestions}
+            onValueChange={setNumQuestions}
           />
         </div>
         <Button type="submit" disabled={isPending} className="w-full !mt-8" size="lg">
