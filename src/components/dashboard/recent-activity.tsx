@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +17,13 @@ const iconMap = {
 export default function RecentActivity() {
     const { attempts, isLoading } = useUserQuizAttempts();
 
+    // Filter attempts to ensure they have the necessary data before rendering
+    const validAttempts = attempts?.filter(attempt => 
+        attempt.topic && 
+        typeof attempt.score === 'number' && 
+        typeof attempt.totalQuestions === 'number'
+    ) || [];
+
     return (
         <Card className="bg-card/80 backdrop-blur-sm">
             <CardHeader>
@@ -25,7 +33,7 @@ export default function RecentActivity() {
             <CardContent>
                  {isLoading && <div className="flex justify-center items-center h-40"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}
                 
-                {!isLoading && (!attempts || attempts.length === 0) && (
+                {!isLoading && validAttempts.length === 0 && (
                     <div className="text-center text-muted-foreground py-8">
                         <ClipboardCheck className="mx-auto h-12 w-12 mb-4" />
                         <p className="font-medium">No Activity Yet</p>
@@ -33,9 +41,9 @@ export default function RecentActivity() {
                     </div>
                 )}
                 
-                {!isLoading && attempts && attempts.length > 0 && (
+                {!isLoading && validAttempts.length > 0 && (
                     <div className="space-y-4">
-                        {attempts.slice(0, 5).map((activity) => (
+                        {validAttempts.slice(0, 5).map((activity) => (
                             <div key={activity.id} className="flex items-center gap-4">
                                 <Avatar className="hidden h-9 w-9 sm:flex">
                                     <AvatarFallback className='bg-primary'>
