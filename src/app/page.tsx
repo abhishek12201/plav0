@@ -66,7 +66,7 @@ export default function Home() {
           <div className="container px-4 md:px-6">
             <div className="max-w-[800px] mx-auto text-center flex flex-col items-center">
               <h1 className="lg:leading-tighter text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl xl:text-7xl font-headline">
-                The Future of Learning, {" "}
+                The Future of Learning,{" "}
                 <span className="text-primary">Personalized for You</span>
               </h1>
               <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl my-6">
