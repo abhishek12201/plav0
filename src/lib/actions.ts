@@ -77,10 +77,14 @@ export async function generatePersonalizedQuiz(
         return { ...result, quizId: newQuizRef.id };
     }
     
-    return result as { error: string };
+    // If result is not valid, treat as an error.
+    const errorMessage = (result as { error: string })?.error || "The AI failed to generate a valid quiz structure.";
+    return { error: errorMessage };
+
   } catch (error) {
     console.error("Error generating quiz:", error);
-    return { error: "Sorry, I couldn't generate a quiz at the moment. Please try again later." };
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during quiz generation.";
+    return { error: "Sorry, I couldn't generate a quiz at the moment. " + errorMessage };
   }
 }
 
@@ -111,8 +115,6 @@ export async function retrieveContent(
 ): Promise<RetrieveContentOutput | { error: string }> {
   try {
     const result = await retrieve({ topic: input.topic });
-    // Decoupling Firestore write from the AI action to prevent failures.
-    // The summary will be saved by another dedicated action if needed, or passed directly.
     return result;
   } catch (error) {
     console.error("Error retrieving content:", error);
@@ -128,12 +130,12 @@ export async function saveQuizAttempt(
     const attemptsCol = collection(firestore, "users", input.userId, "quizAttempts");
     
     if (input.attemptId && input.feedback) {
-      // This is an update to add feedback
+      // This is an update to add feedback to an existing attempt
       const attemptRef = doc(attemptsCol, input.attemptId);
       await setDoc(attemptRef, { feedback: input.feedback }, { merge: true });
       return { success: true, attemptId: input.attemptId };
     } else {
-      // This is a new attempt
+      // This is a new attempt to be created
       const newAttemptRef = await addDoc(attemptsCol, {
         quizId: input.quizId,
         userId: input.userId,

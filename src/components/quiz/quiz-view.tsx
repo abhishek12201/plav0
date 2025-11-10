@@ -360,7 +360,7 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
                 />
                 <div className='flex items-center gap-1'>
                   {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} className='h-5 w-5 text-primary fill-primary'/>
+                      <Star key={i} className={cn('h-5 w-5 text-yellow-400', i < confidence[0] ? 'fill-yellow-400' : 'fill-muted stroke-muted-foreground')}/>
                   ))}
                 </div>
               </div>
@@ -374,7 +374,3 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
     </div>
   );
 }
-
-    
-
-    
