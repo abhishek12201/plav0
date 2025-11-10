@@ -7,19 +7,16 @@
  *
  * Data Structure:
  * - /users/{userId}: User profiles, accessible only by the user themselves.
+ * - /quizzes/{quizId}: User-generated quizzes, readable only by the creator.
  * - /users/{userId}/studyPlans/{studyPlanId}: Study plans owned by a specific user.
  * - /users/{userId}/summaries/{summaryId}: Content summaries owned by a specific user.
  * - /learningMaterials/{learningMaterialId}: Learning materials, publicly readable but only editable by the owner.
- * - /learningMaterials/{learningMaterialId}/quizzes/{quizId}: Quizzes associated with learning materials, write access should only be given to learning material owner.
  * - /users/{userId}/quizAttempts/{quizAttemptId}: User's quiz attempts, only accessible by the user themselves.
  *
  * Key Security Decisions:
  * - User data is strictly private and only accessible to the owning user.
  * - Learning materials are publicly readable to facilitate discovery.
  * - The structure is designed to maintain a homogeneous security posture, enhancing debuggability by making authorization intent explicit.
- *
- * Denormalization for Authorization:
- * - The 'Quiz' documents have a denormalized `learningMaterialId` field. This prevents requiring a `get()` on the parent `learningMaterial` document to check for ownership.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -47,6 +44,24 @@ service cloud.firestore {
       allow create: if isOwner(userId) && request.resource.data.id == userId;
       allow update: if isOwner(userId) && resource.data.id == userId; // Enforce immutability of userId.
       allow delete: if isOwner(userId) && resource != null; // Check for existence before deleting.
+    }
+    
+    /**
+     * @description Controls access to user-generated quizzes.
+     * @path /quizzes/{quizId}
+     * @allow (create) - Any authenticated user can create a quiz. The 'userId' field must match their own UID.
+     * @allow (get, list) - A user can read or list quizzes where their UID matches the 'userId' field in the quiz document.
+     * @deny (update, delete) - Quizzes are immutable and cannot be updated or deleted.
+     * @principle Enforces ownership for read/create, and ensures data integrity by preventing modification.
+     */
+    match /quizzes/{quizId} {
+      function isQuizOwner() {
+        return request.auth != null && resource.data.userId == request.auth.uid;
+      }
+      
+      allow get, list: if isQuizOwner();
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false; // Quizzes are immutable
     }
 
     /**
@@ -107,31 +122,7 @@ service cloud.firestore {
       allow update: if request.auth != null && resource.data.creatorId == request.auth.uid && resource != null;
       allow delete: if request.auth != null && resource.data.creatorId == request.auth.uid && resource != null;
     }
-
-    /**
-     * @description Controls access to quizzes associated with learning materials.
-     * @path /learningMaterials/{learningMaterialId}/quizzes/{quizId}
-     * @allow (get, list) - Any user can read quizzes.
-     * @allow (create) - User with UID 'user_abc' (the creator of the learning material) can create a quiz under that learning material. The quiz's 'learningMaterialId' must match {learningMaterialId}.
-     * @allow (update, delete) - User with UID 'user_abc' (the creator of the learning material) can update/delete a quiz under that learning material. The quiz's 'learningMaterialId' must match {learningMaterialId}.
-     * @deny (create) - User with UID 'user_xyz' cannot create a quiz under learning material 'learningMaterial123'.
-     * @deny (update, delete) - User with UID 'user_xyz' cannot update/delete a quiz under learning material 'learningMaterial123'.
-     * @principle Allows public read access but restricts write access to the owner of the parent learning material.
-     */
-    match /learningMaterials/{learningMaterialId}/quizzes/{quizId} {
-       function isLearningMaterialOwner(learningMaterialId) {
-        return get(/databases/$(database)/documents/learningMaterials/$(learningMaterialId)).data.creatorId == request.auth.uid;
-      }
-
-      allow get: if true;
-      allow list: if true;
-
-      // CRITICAL:  The following rule is insecure until an ownership field is added to /learningMaterials/{learningMaterialId}
-      allow create: if request.auth != null && request.resource.data.learningMaterialId == learningMaterialId && isLearningMaterialOwner(learningMaterialId);  // TODO:  Add ownership check. The creator must be owner of the learning material.
-      allow update: if request.auth != null && request.resource.data.learningMaterialId == learningMaterialId && resource != null && isLearningMaterialOwner(learningMaterialId); // TODO: Add ownership check to ensure only the learning material owner can update/delete.
-      allow delete: if request.auth != null && request.resource.data.learningMaterialId == learningMaterialId && resource != null && isLearningMaterialOwner(learningMaterialId); // TODO: Add ownership check to ensure only the learning material owner can update/delete.
-    }
-
+    
     /**
      * @description Controls access to quiz attempts for a specific user.
      * @path /users/{userId}/quizAttempts/{quizAttemptId}

@@ -41,10 +41,26 @@ export async function createPersonalizedStudyPlan(
 }
 
 export async function generatePersonalizedQuiz(
-  input: GeneratePersonalizedQuizInput
+  input: GeneratePersonalizedQuizInput & { userId: string }
 ): Promise<GeneratePersonalizedQuizOutput | { error: string }> {
   try {
-    return await generateQuiz(input);
+    const result = await generateQuiz(input);
+    
+    // Save the generated quiz to Firestore
+    if (result && 'questions' in result && result.questions) {
+        const { firestore } = getSdks();
+        const quizzesCol = collection(firestore, "quizzes");
+        await addDoc(quizzesCol, {
+          userId: input.userId,
+          topic: input.topic,
+          difficulty: input.difficulty,
+          title: result.title,
+          questions: result.questions,
+          createdAt: serverTimestamp(),
+        });
+    }
+    
+    return result;
   } catch (error) {
     console.error("Error generating quiz:", error);
     return { error: "Sorry, I couldn't generate a quiz at the moment. Please try again later." };

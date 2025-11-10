@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useTransition } from 'react';
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import type { QuizData } from './quiz-view';
 import { Input } from '../ui/input';
 import { Slider } from '../ui/slider';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { useUser } from '@/firebase';
 
 type QuizGeneratorProps = {
   onQuizGenerated: (data: QuizData) => void;
@@ -20,9 +22,20 @@ export default function QuizGenerator({ onQuizGenerated }: QuizGeneratorProps) {
   const [numQuestions, setNumQuestions] = React.useState([5]);
   const [difficulty, setDifficulty] = React.useState("easy");
   const { toast } = useToast();
+  const { user } = useUser();
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (!user) {
+      toast({
+        title: "Not Logged In",
+        description: "You must be logged in to generate a quiz.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const formData = new FormData(event.currentTarget);
     const learningContent = formData.get("learningContent") as string;
     const topic = formData.get("topic") as string;
@@ -42,6 +55,7 @@ export default function QuizGenerator({ onQuizGenerated }: QuizGeneratorProps) {
         topic,
         numberOfQuestions: numQuestions[0],
         difficulty: difficulty,
+        userId: user.uid,
       });
 
       if (result && 'questions' in result && result.questions) {
@@ -51,7 +65,7 @@ export default function QuizGenerator({ onQuizGenerated }: QuizGeneratorProps) {
         });
         toast({
           title: "Quiz Generated!",
-          description: "Your personalized quiz is ready.",
+          description: "Your personalized quiz is ready and has been saved.",
         });
       } else {
         const error = (result as {error: string})?.error || "Failed to generate quiz. Please try again.";
