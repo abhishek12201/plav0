@@ -26,15 +26,17 @@ import {
   type RetrieveContentOutput,
 } from "@/ai/flows/retrieve-content";
 import { getSdks } from "@/firebase";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, doc, serverTimestamp, setDoc } from "firebase/firestore";
 
 export type UserQuizAttempt = {
-  quizId: string;
+  quizId?: string;
   userId: string;
-  answers: { [key: number]: string };
-  score: number;
-  topic: string;
-  totalQuestions: number;
+  answers?: { [key: number]: string };
+  score?: number;
+  topic?: string;
+  totalQuestions?: number;
+  feedback?: ProvideAdaptiveFeedbackOutput;
+  attemptId?: string;
 };
 
 export async function createPersonalizedStudyPlan(
@@ -122,20 +124,35 @@ export async function retrieveContent(
 
 export async function saveQuizAttempt(
   input: UserQuizAttempt
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; attemptId?: string; error?: string }> {
   try {
     const { firestore } = getSdks();
     const attemptsCol = collection(firestore, "users", input.userId, "quizAttempts");
-    await addDoc(attemptsCol, {
-      ...input,
-      attemptTime: serverTimestamp(),
-    });
-    return { success: true };
+    
+    if (input.attemptId) {
+      // This is an update, likely to add feedback
+      const attemptRef = doc(attemptsCol, input.attemptId);
+      await setDoc(attemptRef, { feedback: input.feedback }, { merge: true });
+      return { success: true, attemptId: input.attemptId };
+    } else {
+      // This is a new attempt
+      const newAttemptRef = await addDoc(attemptsCol, {
+        quizId: input.quizId,
+        userId: input.userId,
+        answers: input.answers,
+        score: input.score,
+        topic: input.topic,
+        totalQuestions: input.totalQuestions,
+        attemptTime: serverTimestamp(),
+      });
+      return { success: true, attemptId: newAttemptRef.id };
+    }
   } catch (error) {
     console.error("Error saving quiz attempt:", error);
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
     return { success: false, error: "Sorry, I couldn't save your quiz attempt. " + errorMessage };
   }
 }
+
 
 export type { ProvideAdaptiveFeedbackOutput };

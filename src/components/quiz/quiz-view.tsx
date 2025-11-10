@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState, useTransition, useCallback } from 'react';
+import React, { useState, useTransition, useCallback, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -55,27 +55,37 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
   const [isPending, startTransition] = useTransition();
   const [flagged, setFlagged] = useState<Flagged>({});
   const [feedbackTone, setFeedbackTone] = useState<FeedbackTone>("Encouraging");
+  const [attemptId, setAttemptId] = useState<string | null>(null);
+
   const { toast } = useToast();
   const { user } = useUser();
 
-  const getFeedback = useCallback((tone: FeedbackTone) => {
+  const getFeedback = useCallback((currentScore: number, currentAnswers: Answers, tone: FeedbackTone) => {
     setFeedback(null);
     startTransition(async () => {
       const questionsWithUserAnswers = quizData.questions.map((q, i) => ({
         ...q,
-        userAnswer: answers[i] || "Not answered",
+        userAnswer: currentAnswers[i] || "Not answered",
       }));
 
-      const feedbackResult = await provideAdaptiveFeedback({
+      const feedbackResult = await provideFeedback({
         quizTitle: quizData.title,
         questions: questionsWithUserAnswers,
-        score: score,
+        score: currentScore,
         studentKnowledgeLevel: 'intermediate',
         feedbackTone: tone,
       });
 
-      if (feedbackResult && feedbackResult.overallFeedback) {
+      if (feedbackResult && 'overallFeedback' in feedbackResult) {
         setFeedback(feedbackResult);
+        // Now save the feedback to the attempt
+        if (user && attemptId) {
+          saveQuizAttempt({
+            attemptId,
+            userId: user.uid,
+            feedback: feedbackResult,
+          });
+        }
       } else {
         const error = (feedbackResult as { error: string })?.error || "Could not generate adaptive feedback.";
         toast({
@@ -85,7 +95,7 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
         });
       }
     });
-  }, [quizData, answers, score, toast]);
+  }, [quizData, toast, user, attemptId]);
   
   const handleAnswerChange = (value: string) => {
     setAnswers({ ...answers, [currentQuestionIndex]: value });
@@ -103,7 +113,7 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
     setFlagged({ ...flagged, [currentQuestionIndex]: !flagged[currentQuestionIndex] });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     let newScore = 0;
     quizData.questions.forEach((q, index) => {
       if (q.type === 'multiple-choice' && answers[index] === q.correctAnswer) {
@@ -117,32 +127,33 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
     setIsFinished(true);
 
     if (user && quizData.topic) {
-      saveQuizAttempt({
+      const result = await saveQuizAttempt({
         userId: user.uid,
         quizId: quizData.quizId,
         answers: answers,
         score: finalScore,
         topic: quizData.topic,
         totalQuestions: quizData.questions.length,
-      }).then(res => {
-        if (res.success) {
-          toast({
-            title: "Quiz Finished!",
-            description: "Your results have been saved.",
-          });
-        } else {
-           toast({
-            title: "Save Error",
-            description: res.error,
-            variant: "destructive",
-          });
-        }
       });
+      
+      if (result.success && result.attemptId) {
+        setAttemptId(result.attemptId);
+        toast({
+          title: "Quiz Finished!",
+          description: "Your results have been saved.",
+        });
+        getFeedback(finalScore, answers, feedbackTone);
+      } else {
+         toast({
+          title: "Save Error",
+          description: result.error,
+          variant: "destructive",
+        });
+      }
+    } else {
+      getFeedback(finalScore, answers, feedbackTone);
     }
-
-    getFeedback(feedbackTone);
   };
-  
 
   if (isFinished) {
     return (
@@ -166,7 +177,7 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
                 <Label htmlFor="feedback-tone">Tone</Label>
                 <Select value={feedbackTone} onValueChange={(value: FeedbackTone) => {
                   setFeedbackTone(value);
-                  getFeedback(value);
+                  getFeedback(score, answers, value);
                 }}>
                   <SelectTrigger className="w-[140px]" id="feedback-tone">
                     <SelectValue placeholder="Select tone" />
