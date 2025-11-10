@@ -10,45 +10,6 @@ import type { QuizData } from './quiz-view';
 import { Input } from '../ui/input';
 import { Slider } from '../ui/slider';
 
-// This is a mock parser. In a real app, you'd want a more robust solution,
-// preferably by having the AI return structured JSON.
-const parseQuizString = (quizString: string): QuizData => {
-  console.log("AI Output (to be parsed):\n", quizString);
-  // This mock parser creates a sample quiz. It does NOT correctly parse the actual AI string output.
-  // This is a placeholder due to constraints on modifying AI flows.
-  return {
-    title: 'Mock Generated Quiz',
-    questions: [
-      {
-        question: "What is the primary function of a CPU in a computer?",
-        options: ["Store data long-term", "Execute instructions", "Display graphics", "Connect to the internet"],
-        correctAnswer: "Execute instructions"
-      },
-      {
-        question: "In React, what hook is used to manage state in a functional component?",
-        options: ["useEffect", "useState", "useContext", "useReducer"],
-        correctAnswer: "useState"
-      },
-      {
-        question: "Which of the following is a key characteristic of blockchain technology?",
-        options: ["Centralized control", "Immutability", "Low energy consumption", "Easy to modify data"],
-        correctAnswer: "Immutability"
-      },
-      {
-        question: "What does 'AI' stand for?",
-        options: ["Automated Intelligence", "Augmented Interaction", "Artificial Intelligence", "Algorithmic Interface"],
-        correctAnswer: "Artificial Intelligence"
-      },
-      {
-        question: "Which planet is known as the Red Planet?",
-        options: ["Earth", "Mars", "Jupiter", "Saturn"],
-        correctAnswer: "Mars"
-      }
-    ],
-    originalContent: quizString, // We pass the original content for feedback generation
-  };
-};
-
 type QuizGeneratorProps = {
   onQuizGenerated: (data: QuizData) => void;
 };
@@ -80,17 +41,21 @@ export default function QuizGenerator({ onQuizGenerated }: QuizGeneratorProps) {
         numberOfQuestions: numQuestions[0],
       });
 
-      if (result && result.quiz) {
-        const parsedQuiz = parseQuizString(result.quiz);
-        onQuizGenerated(parsedQuiz);
+      if (result && 'questions' in result) {
+        onQuizGenerated({
+          title: result.title,
+          questions: result.questions,
+          originalContent: learningContent,
+        });
         toast({
           title: "Quiz Generated!",
           description: "Your personalized quiz is ready to be taken.",
         });
       } else {
+        const error = (result as {error: string}).error || "Failed to generate quiz. Please try again.";
         toast({
           title: "Error",
-          description: "Failed to generate quiz. Please try again.",
+          description: error,
           variant: "destructive",
         });
       }

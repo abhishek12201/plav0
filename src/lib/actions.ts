@@ -2,28 +2,33 @@
 import {
   createPersonalizedStudyPlan as createPlan,
   type CreatePersonalizedStudyPlanInput,
+  type CreatePersonalizedStudyPlanOutput,
 } from "@/ai/flows/create-personalized-study-plan";
 import {
   generatePersonalizedQuiz as generateQuiz,
   type GeneratePersonalizedQuizInput,
+  type GeneratePersonalizedQuizOutput,
 } from "@/ai/flows/generate-personalized-quiz";
 import {
   provideAdaptiveFeedback as provideFeedback,
   type ProvideAdaptiveFeedbackInput,
+  type ProvideAdaptiveFeedbackOutput,
 } from "@/ai/flows/provide-adaptive-feedback";
 import {
   summarizeLearningContent as summarize,
   type SummarizeLearningContentInput,
+  type SummarizeLearningContentOutput,
 } from "@/ai/flows/summarize-learning-content";
 import {
   retrieveContent as retrieve,
   type RetrieveContentInput,
+  type RetrieveContentOutput,
 } from "@/ai/flows/retrieve-content";
 
 
 export async function createPersonalizedStudyPlan(
   input: CreatePersonalizedStudyPlanInput
-) {
+): Promise<CreatePersonalizedStudyPlanOutput> {
   try {
     return await createPlan(input);
   } catch (error) {
@@ -34,18 +39,20 @@ export async function createPersonalizedStudyPlan(
 
 export async function generatePersonalizedQuiz(
   input: GeneratePersonalizedQuizInput
-) {
+): Promise<GeneratePersonalizedQuizOutput | { error: string }> {
   try {
-    return await generateQuiz(input);
+    const result = await generateQuiz(input);
+    // Add original content to pass to feedback later
+    return { ...result, originalContent: input.learningContent };
   } catch (error) {
     console.error("Error generating quiz:", error);
-    return { quiz: "Sorry, I couldn't generate a quiz at the moment. Please try again later." };
+    return { error: "Sorry, I couldn't generate a quiz at the moment. Please try again later." };
   }
 }
 
 export async function provideAdaptiveFeedback(
   input: ProvideAdaptiveFeedbackInput
-) {
+): Promise<ProvideAdaptiveFeedbackOutput> {
   try {
     return await provideFeedback(input);
   } catch (error) {
@@ -56,7 +63,7 @@ export async function provideAdaptiveFeedback(
 
 export async function summarizeLearningContent(
   input: SummarizeLearningContentInput
-) {
+): Promise<SummarizeLearningContentOutput> {
   try {
     return await summarize(input);
   } catch (error) {
@@ -67,7 +74,7 @@ export async function summarizeLearningContent(
 
 export async function retrieveContent(
   input: RetrieveContentInput
-) {
+): Promise<RetrieveContentOutput> {
   try {
     return await retrieve(input);
   } catch (error) {
