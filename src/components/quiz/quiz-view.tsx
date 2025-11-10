@@ -277,6 +277,16 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
   const isFlagged = flagged[currentQuestionIndex];
   const confidenceLabels = ["Guessing", "Unsure", "Somewhat Sure", "Confident", "Very Confident"];
 
+  if (!currentQuestion) {
+    return (
+      <div className="flex flex-col items-center justify-center text-center text-muted-foreground p-8">
+        <Loader2 className="h-8 w-8 animate-spin mb-4" />
+        <p>Loading quiz...</p>
+        <p className="text-sm mt-2">If this continues, the quiz might be empty or invalid.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="text-center mb-4">
@@ -364,5 +374,7 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
     </div>
   );
 }
+
+    
 
     
