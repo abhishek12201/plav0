@@ -9,6 +9,8 @@ import { Loader2, Book, ArrowRight } from 'lucide-react';
 import type { QuizData } from './quiz-view';
 import { Badge } from '../ui/badge';
 import { ScrollArea } from '../ui/scroll-area';
+import { dummyQuizzes } from '@/lib/dummy-data';
+import { useState, useEffect } from 'react';
 
 type RecentQuizzesProps = {
     onStartQuiz: (quiz: QuizData) => void;
@@ -20,16 +22,16 @@ type StoredQuiz = {
     topic: string;
     difficulty: string;
     questions: any[];
-    createdAt: Timestamp;
+    createdAt: Timestamp | { seconds: number };
 }
 
 export default function RecentQuizzes({ onStartQuiz }: RecentQuizzesProps) {
     const { user } = useUser();
     const firestore = useFirestore();
+    const [useDummyData, setUseDummyData] = useState(false);
 
     const quizzesQuery = useMemoFirebase(() => {
         if (!user) return null;
-        // Query the subcollection under the specific user
         return query(
             collection(firestore, 'users', user.uid, 'quizzes'),
             orderBy('createdAt', 'desc'),
@@ -37,18 +39,28 @@ export default function RecentQuizzes({ onStartQuiz }: RecentQuizzesProps) {
         );
     }, [firestore, user]);
 
-    const { data: quizzes, isLoading } = useCollection<StoredQuiz>(quizzesQuery);
+    const { data: liveQuizzes, isLoading: isLiveLoading } = useCollection<StoredQuiz>(quizzesQuery);
+
+    useEffect(() => {
+        if (!isLiveLoading && (!liveQuizzes || liveQuizzes.length === 0)) {
+            setUseDummyData(true);
+        } else {
+            setUseDummyData(false);
+        }
+    }, [liveQuizzes, isLiveLoading]);
 
     const handleQuizSelect = (quiz: StoredQuiz) => {
-        // Create a new object with only serializable data to avoid passing Firestore Timestamps
         const serializableQuizData: QuizData = {
             quizId: quiz.id,
             title: quiz.title,
             topic: quiz.topic,
-            questions: quiz.questions
+            questions: quiz.questions || []
         };
         onStartQuiz(serializableQuizData);
     }
+
+    const isLoading = isLiveLoading && !useDummyData;
+    const quizzes = useDummyData ? (dummyQuizzes as StoredQuiz[]) : liveQuizzes;
 
     return (
         <Card>
@@ -73,7 +85,7 @@ export default function RecentQuizzes({ onStartQuiz }: RecentQuizzesProps) {
                                     <p className="font-semibold text-sm leading-tight">{quiz.title}</p>
                                     <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground">
                                        <Badge variant="outline" className="capitalize">{quiz.difficulty}</Badge>
-                                       <Badge variant="secondary">{quiz.questions.length} questions</Badge>
+                                       <Badge variant="secondary">{quiz.questions?.length || 0} questions</Badge>
                                     </div>
                                 </div>
                                 <Button size="sm" variant="ghost" onClick={() => handleQuizSelect(quiz)}>
