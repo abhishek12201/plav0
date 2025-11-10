@@ -8,10 +8,16 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { provideAdaptiveFeedback, type ProvideAdaptiveFeedbackOutput, saveQuizAttempt } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, RefreshCcw } from 'lucide-react';
+import { Loader2, Sparkles, RefreshCcw, Flag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { useUser } from '@/firebase';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 type Question = {
   question: string;
@@ -31,6 +37,7 @@ type QuizViewProps = {
 };
 
 type Answers = { [key: number]: string };
+type Flagged = { [key: number]: boolean };
 
 export default function QuizView({ quizData, onRetake }: QuizViewProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -39,6 +46,7 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
   const [score, setScore] = useState(0);
   const [feedback, setFeedback] = useState<ProvideAdaptiveFeedbackOutput | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [flagged, setFlagged] = useState<Flagged>({});
   const { toast } = useToast();
   const { user } = useUser();
   
@@ -52,6 +60,10 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
     } else {
       handleSubmit();
     }
+  };
+
+  const handleToggleFlag = () => {
+    setFlagged({ ...flagged, [currentQuestionIndex]: !flagged[currentQuestionIndex] });
   };
 
   const handleSubmit = () => {
@@ -177,6 +189,7 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
 
   const currentQuestion = quizData.questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex) / quizData.questions.length) * 100;
+  const isFlagged = flagged[currentQuestionIndex];
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -188,7 +201,30 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
       
       <Card className="bg-card/50 border-none shadow-none">
         <CardHeader>
-          <CardTitle className="text-xl font-medium leading-relaxed">{currentQuestion.question}</CardTitle>
+          <div className="flex justify-between items-start gap-4">
+            <CardTitle className="text-xl font-medium leading-relaxed flex-1">{currentQuestion.question}</CardTitle>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleToggleFlag}
+                    className={cn(
+                      "shrink-0",
+                      isFlagged ? "text-primary" : "text-muted-foreground"
+                    )}
+                  >
+                    <Flag className={isFlagged ? "fill-current" : ""} />
+                    <span className="sr-only">Flag question for review</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Flag for review</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </CardHeader>
         <CardContent>
           <RadioGroup value={answers[currentQuestionIndex]} onValueChange={handleAnswerChange} className="space-y-3">
