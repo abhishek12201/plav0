@@ -15,6 +15,11 @@ import {
   summarizeLearningContent as summarize,
   type SummarizeLearningContentInput,
 } from "@/ai/flows/summarize-learning-content";
+import {
+  retrieveContent as retrieve,
+  type RetrieveContentInput,
+} from "@/ai/flows/retrieve-content";
+
 
 export async function createPersonalizedStudyPlan(
   input: CreatePersonalizedStudyPlanInput
@@ -57,5 +62,16 @@ export async function summarizeLearningContent(
   } catch (error) {
     console.error("Error summarizing content:", error);
     return { summary: "Sorry, I couldn't summarize the content at the moment. Please try again later." };
+  }
+}
+
+export async function retrieveContent(
+  input: RetrieveContentInput
+) {
+  try {
+    return await retrieve(input);
+  } catch (error) {
+    console.error("Error retrieving content:", error);
+    return { summary: "Sorry, I couldn't retrieve content at the moment. Please try again later." };
   }
 }
