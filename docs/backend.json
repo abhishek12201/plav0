@@ -308,6 +308,26 @@
                 }
               ]
             }
+          },
+          "quizAttempts": {
+            "path": "/users/{userId}/quizAttempts/{quizAttemptId}",
+            "definition": {
+              "entityName": "UserQuizAttempt",
+              "schema": {
+                "$ref": "#/backend/entities/UserQuizAttempt"
+              },
+              "description": "Stores quiz attempts for each user.  Authorization is based on {userId} matching request.auth.uid.",
+              "params": [
+                {
+                  "name": "userId",
+                  "description": "The unique identifier of the user."
+                },
+                {
+                  "name": "quizAttemptId",
+                  "description": "The unique identifier of the quiz attempt."
+                }
+              ]
+            }
           }
         }
       },
