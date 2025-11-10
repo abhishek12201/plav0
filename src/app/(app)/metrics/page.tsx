@@ -20,7 +20,7 @@ export default function MetricsPage() {
             }
             acc[attempt.topic].scores.push((attempt.score / attempt.totalQuestions) * 100);
             return acc;
-        }, {} as Record<string, { topic: string; scores: number[], fullMark: number }>)).map(item => ({
+        }, {} as Record<string, { topic: string; scores: number[], fullMark: 100 }>)).map(item => ({
             ...item,
             score: item.scores.reduce((a, b) => a + b, 0) / item.scores.length
         })) : []
