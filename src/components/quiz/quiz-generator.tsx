@@ -63,6 +63,7 @@ export default function QuizGenerator({ onQuizGenerated }: QuizGeneratorProps) {
           title: result.title,
           questions: result.questions,
           quizId: result.quizId,
+          topic: topic,
         });
         toast({
           title: "Quiz Generated!",
