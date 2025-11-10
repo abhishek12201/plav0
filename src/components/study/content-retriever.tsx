@@ -78,7 +78,7 @@ export default function ContentRetriever() {
             </Button>
           </form>
           <div className="mt-6 text-sm text-muted-foreground p-4 bg-secondary/30 rounded-md">
-            <p><strong>Note:</strong> In a full implementation, you would be asked for permission to use web search APIs or to upload your own files (PDFs, notes) to provide context for the agent. For this demonstration, the agent will synthesize information based on its existing knowledge.</p>
+            <p><strong>Note:</strong> This agent synthesizes information from its knowledge base, acting as if it is retrieving and summarizing content from trusted educational sources. A full implementation could integrate with live web search APIs.</p>
           </div>
         </CardContent>
       </Card>
