@@ -5,23 +5,55 @@
  *
  * - provideAdaptiveFeedback - A function that provides customized feedback on quizzes.
  * - ProvideAdaptiveFeedbackInput - The input type for the provideAdaptiveFeedback function.
- * - ProvideAdaptiveFeedbackOutput - The return type for the provideAdaptiveFeedback function.
+ * - ProvideAdaptiveFeedbackOutput - The return type for the provideAdaptivefeedback function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ProvideAdaptiveFeedbackInputSchema = z.object({
-  quizResults: z.string().describe('The results of the quiz taken by the student.'),
-  studyMaterial: z.string().describe('The study material the quiz is based on.'),
-  studentKnowledgeLevel: z.string().describe('The current knowledge level of the student.'),
+  quizTitle: z.string().describe('The title of the quiz.'),
+  questions: z
+    .array(
+      z.object({
+        question: z.string(),
+        options: z.array(z.string()),
+        correctAnswer: z.string(),
+        userAnswer: z.string().optional(),
+      })
+    )
+    .describe('The list of questions, their correct answers, and the user’s answers.'),
+  score: z.number().describe('The user’s final score.'),
+  studentKnowledgeLevel: z
+    .string()
+    .describe('The current knowledge level of the student.'),
 });
 export type ProvideAdaptiveFeedbackInput = z.infer<
   typeof ProvideAdaptiveFeedbackInputSchema
 >;
 
+const FeedbackItemSchema = z.object({
+  question: z.string().describe('The question the user answered incorrectly.'),
+  userAnswer: z.string().describe('The answer the user provided.'),
+  correctAnswer: z.string().describe('The correct answer to the question.'),
+  explanation: z
+    .string()
+    .describe(
+      'A clear and concise explanation of why the correct answer is right and where the user might have gone wrong.'
+    ),
+});
+
 const ProvideAdaptiveFeedbackOutputSchema = z.object({
-  feedback: z.string().describe('The AI-driven, customized feedback on the quiz.'),
+  overallFeedback: z
+    .string()
+    .describe(
+      'A general, encouraging summary of the student’s performance on the quiz.'
+    ),
+  detailedFeedback: z
+    .array(FeedbackItemSchema)
+    .describe(
+      'An array of specific feedback for each question the user answered incorrectly.'
+    ),
 });
 export type ProvideAdaptiveFeedbackOutput = z.infer<
   typeof ProvideAdaptiveFeedbackOutputSchema
@@ -37,16 +69,24 @@ const provideAdaptiveFeedbackPrompt = ai.definePrompt({
   name: 'provideAdaptiveFeedbackPrompt',
   input: {schema: ProvideAdaptiveFeedbackInputSchema},
   output: {schema: ProvideAdaptiveFeedbackOutputSchema},
-  prompt: `You are an AI mentor providing adaptive feedback to a student based on their quiz results and study material.
+  prompt: `You are an AI mentor providing adaptive feedback to a student based on their quiz results.
 
-  Study Material: {{{studyMaterial}}}
-  Quiz Results: {{{quizResults}}}
-  Student Knowledge Level: {{{studentKnowledgeLevel}}}
+  Quiz: {{{quizTitle}}}
+  Score: {{{score}}} out of {{{questions.length}}}
+  Student's Knowledge Level: {{{studentKnowledgeLevel}}}
+  Questions and Answers:
+  {{#each questions}}
+  - Question: "{{this.question}}"
+    User Answer: "{{this.userAnswer}}"
+    Correct Answer: "{{this.correctAnswer}}"
+  {{/each}}
 
-  Provide constructive and individualized feedback to help the student understand their mistakes and improve their learning.
-  Focus on specific areas where the student struggled and offer suggestions for further study.
-  The feedback should be encouraging and tailored to the student's current knowledge level.
-  Make sure to format the feedback in markdown.
+  Your task is to provide constructive, individualized, and encouraging feedback.
+
+  1.  **Overall Feedback**: Start with a general summary of the student's performance. Be encouraging and positive, regardless of the score.
+  2.  **Detailed Feedback**: For EACH question the user answered incorrectly, provide a detailed explanation. Explain why their answer was incorrect and why the correct answer is right. Offer a clear, easy-to-understand concept review.
+
+  Generate the structured feedback now.
   `,
 });
 

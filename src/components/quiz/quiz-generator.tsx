@@ -45,7 +45,6 @@ export default function QuizGenerator({ onQuizGenerated }: QuizGeneratorProps) {
         onQuizGenerated({
           title: result.title,
           questions: result.questions,
-          originalContent: learningContent,
         });
         toast({
           title: "Quiz Generated!",
