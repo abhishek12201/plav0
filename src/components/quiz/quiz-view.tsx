@@ -18,9 +18,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { Textarea } from '../ui/textarea';
 
 type Question = {
   question: string;
+  type: 'multiple-choice' | 'short-answer';
   options: string[];
   correctAnswer: string;
 };
@@ -79,7 +81,9 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
 
     let newScore = 0;
     quizData.questions.forEach((q, index) => {
-      if (answers[index] === q.correctAnswer) {
+      // For short-answer, we can only check for exact match for now.
+      // A more advanced solution would use AI for grading.
+      if (answers[index]?.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()) {
         newScore++;
       }
     });
@@ -227,24 +231,37 @@ export default function QuizView({ quizData, onRetake }: QuizViewProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <RadioGroup value={answers[currentQuestionIndex]} onValueChange={handleAnswerChange} className="space-y-3">
-            {currentQuestion.options.map((option, index) => (
-              <Label 
-                htmlFor={`q${currentQuestionIndex}-o${index}`} 
-                key={index} 
-                className={cn(
-                  "flex items-center space-x-4 p-4 rounded-lg border-2 transition-all cursor-pointer",
-                  "hover:border-primary/60 hover:bg-primary/5",
-                  answers[currentQuestionIndex] === option 
-                    ? "border-primary bg-primary/10" 
-                    : "border-border"
-                )}
-              >
-                <RadioGroupItem value={option} id={`q${currentQuestionIndex}-o${index}`} className="h-5 w-5"/>
-                <span className="text-base flex-1">{option}</span>
-              </Label>
-            ))}
-          </RadioGroup>
+          {currentQuestion.type === 'multiple-choice' ? (
+            <RadioGroup value={answers[currentQuestionIndex]} onValueChange={handleAnswerChange} className="space-y-3">
+              {currentQuestion.options.map((option, index) => (
+                <Label 
+                  htmlFor={`q${currentQuestionIndex}-o${index}`} 
+                  key={index} 
+                  className={cn(
+                    "flex items-center space-x-4 p-4 rounded-lg border-2 transition-all cursor-pointer",
+                    "hover:border-primary/60 hover:bg-primary/5",
+                    answers[currentQuestionIndex] === option 
+                      ? "border-primary bg-primary/10" 
+                      : "border-border"
+                  )}
+                >
+                  <RadioGroupItem value={option} id={`q${currentQuestionIndex}-o${index}`} className="h-5 w-5"/>
+                  <span className="text-base flex-1">{option}</span>
+                </Label>
+              ))}
+            </RadioGroup>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor={`q${currentQuestionIndex}-short`}>Your Answer</Label>
+              <Textarea
+                id={`q${currentQuestionIndex}-short`}
+                value={answers[currentQuestionIndex] || ''}
+                onChange={(e) => handleAnswerChange(e.target.value)}
+                placeholder="Type your answer here..."
+                className="min-h-[100px]"
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
       <Button onClick={handleNext} disabled={!answers[currentQuestionIndex]} className="w-full mt-8" size="lg">

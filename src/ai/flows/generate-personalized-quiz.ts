@@ -64,7 +64,7 @@ const generateQuizPrompt = ai.definePrompt({
 
   Your task is to generate a quiz based on the provided learning content, topic, and difficulty level. The quiz must have exactly {{{numberOfQuestions}}} questions.
   
-  For now, please only generate 'multiple-choice' questions. Each multiple-choice question must have exactly 4 options, and one of them must be the correct answer.
+  Generate a mix of 'multiple-choice' and 'short-answer' questions. Each multiple-choice question must have exactly 4 options, and one of them must be the correct answer. For short-answer questions, provide an ideal, concise correct answer.
 
   The difficulty should align with Bloom's Taxonomy:
   - 'easy': Focus on Remembering and Understanding (e.g., definitions, facts, explaining concepts).
