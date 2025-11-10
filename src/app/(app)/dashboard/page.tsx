@@ -31,7 +31,7 @@ export default function DashboardPage() {
             <div className="text-2xl font-bold">88%</div>
             <p className="text-xs text-muted-foreground">+5% from last quiz</p>
           </CardContent>
-        </card>
+        </Card>
         <Card className="bg-card/80 backdrop-blur-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Quizzes Taken</CardTitle>
